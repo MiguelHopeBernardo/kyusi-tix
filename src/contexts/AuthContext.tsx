@@ -54,6 +54,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  forgotPassword: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -108,9 +109,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('user');
     toast.success("Logged out successfully");
   };
+  
+  // Forgot password function
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    setIsLoading(true);
+    
+    try {
+      // Check if the email exists in our mock data
+      const foundUser = mockUsers.find(u => u.email === email);
+      
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (foundUser) {
+        toast.success(`Password reset link has been sent to ${email}`);
+        setIsLoading(false);
+        return true;
+      } else {
+        toast.error("Email not found in our system");
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to process request");
+      setIsLoading(false);
+      return false;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, forgotPassword }}>
       {children}
     </AuthContext.Provider>
   );

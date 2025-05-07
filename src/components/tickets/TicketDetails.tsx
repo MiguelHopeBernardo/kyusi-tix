@@ -32,7 +32,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   const [comment, setComment] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [status, setStatus] = useState<TicketStatus>(ticket?.status || 'open');
-  const [selectedAssignee, setSelectedAssignee] = useState(ticket?.assignedTo || '');
+  const [selectedAssignee, setSelectedAssignee] = useState(ticket?.assignedTo || 'unassigned');
   
   const adminsAndFaculty = users.filter(u => u.role === 'admin' || u.role === 'faculty');
   
@@ -42,7 +42,18 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   };
   
   const handleAssign = () => {
-    if (!ticket || !selectedAssignee) return;
+    if (!ticket) return;
+    
+    // If unassigned, clear the assignment
+    if (selectedAssignee === 'unassigned') {
+      updateTicket(ticket.id, { 
+        assignedTo: undefined,
+        assigneeName: undefined,
+        assigneeAvatar: undefined
+      });
+      return;
+    }
+    
     assignTicket(ticket.id, selectedAssignee);
   };
   
@@ -56,7 +67,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   React.useEffect(() => {
     if (ticket) {
       setStatus(ticket.status);
-      setSelectedAssignee(ticket.assignedTo || '');
+      setSelectedAssignee(ticket.assignedTo || 'unassigned');
     }
   }, [ticket]);
   
@@ -163,7 +174,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
                       <SelectValue placeholder="Select assignee" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {adminsAndFaculty.map(u => (
                         <SelectItem key={u.id} value={u.id}>
                           {u.name} ({u.role})
@@ -175,7 +186,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
                     size="sm" 
                     className="w-full mt-1"
                     onClick={handleAssign}
-                    disabled={selectedAssignee === ticket.assignedTo}
+                    disabled={selectedAssignee === ticket.assignedTo || (selectedAssignee === 'unassigned' && !ticket.assignedTo)}
                   >
                     Assign
                   </Button>
