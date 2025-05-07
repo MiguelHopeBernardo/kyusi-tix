@@ -1,0 +1,181 @@
+
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useData } from '@/contexts/DataContext';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PlusCircle, Download } from 'lucide-react';
+import TicketTable from '@/components/tickets/TicketTable';
+import TicketDialog from '@/components/tickets/TicketDialog';
+import TicketDetails from '@/components/tickets/TicketDetails';
+import { Ticket } from '@/models';
+import { toast } from "@/components/ui/sonner";
+
+const Tickets = () => {
+  const { user } = useAuth();
+  const { 
+    getMyTickets, 
+    getAssignedToMeTickets, 
+    getOpenTickets, 
+    getClosedTickets, 
+    tickets 
+  } = useData();
+  const [newTicketDialogOpen, setNewTicketDialogOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  const handleViewTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setDetailsOpen(true);
+  };
+  
+  const handleExportCSV = () => {
+    // Get all tickets
+    const allTickets = [...getMyTickets(), ...getAssignedToMeTickets()];
+    
+    if (allTickets.length === 0) {
+      toast.error("No tickets to export");
+      return;
+    }
+    
+    // Create CSV headers
+    const headers = ['Ticket ID', 'Title', 'Description', 'Status', 'Priority', 'Creator', 'Assignee', 'Department', 'Created At', 'Updated At'];
+    
+    // Create CSV rows
+    const rows = allTickets.map(ticket => [
+      ticket.id,
+      `"${ticket.title.replace(/"/g, '""')}"`, // Escape quotes
+      `"${ticket.description.replace(/"/g, '""')}"`, // Escape quotes
+      ticket.status,
+      ticket.priority,
+      ticket.creatorName,
+      ticket.assigneeName || 'Unassigned',
+      ticket.department || 'N/A',
+      new Date(ticket.createdAt).toLocaleString(),
+      new Date(ticket.updatedAt).toLocaleString(),
+    ]);
+    
+    // Combine headers and rows
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `tickets_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Tickets exported successfully");
+  };
+  
+  // Only show tabs that are relevant to the user's role
+  const renderTabs = () => {
+    const isAdmin = user?.role === 'admin';
+    
+    if (isAdmin) {
+      return (
+        <TabsList className="grid grid-cols-4">
+          <TabsTrigger value="open">Open Tickets</TabsTrigger>
+          <TabsTrigger value="closed">Closed Tickets</TabsTrigger>
+          <TabsTrigger value="my">My Tickets</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
+        </TabsList>
+      );
+    } else {
+      return (
+        <TabsList className="grid grid-cols-2">
+          <TabsTrigger value="my">My Tickets</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
+        </TabsList>
+      );
+    }
+  };
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Tickets</h2>
+          <p className="text-muted-foreground">
+            Manage support requests and track issues
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleExportCSV} 
+            variant="outline"
+            className="hidden sm:flex"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          
+          <Button onClick={() => setNewTicketDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Ticket
+          </Button>
+        </div>
+      </div>
+      
+      <Tabs defaultValue={user?.role === 'admin' ? 'open' : 'my'}>
+        {renderTabs()}
+        
+        {/* Admin tabs */}
+        {user?.role === 'admin' && (
+          <>
+            <TabsContent value="open" className="mt-6">
+              <TicketTable 
+                tickets={getOpenTickets()}
+                onViewTicket={handleViewTicket}
+                emptyMessage="No open tickets"
+              />
+            </TabsContent>
+            <TabsContent value="closed" className="mt-6">
+              <TicketTable 
+                tickets={getClosedTickets()}
+                onViewTicket={handleViewTicket}
+                emptyMessage="No closed tickets"
+              />
+            </TabsContent>
+          </>
+        )}
+        
+        {/* Common tabs */}
+        <TabsContent value="my" className="mt-6">
+          <TicketTable 
+            tickets={getMyTickets()}
+            onViewTicket={handleViewTicket}
+            emptyMessage="You haven't created any tickets"
+          />
+        </TabsContent>
+        <TabsContent value="assigned" className="mt-6">
+          <TicketTable 
+            tickets={getAssignedToMeTickets()}
+            onViewTicket={handleViewTicket}
+            emptyMessage="No tickets assigned to you"
+          />
+        </TabsContent>
+      </Tabs>
+      
+      {/* Ticket creation dialog */}
+      <TicketDialog 
+        open={newTicketDialogOpen}
+        onOpenChange={setNewTicketDialogOpen}
+      />
+      
+      {/* Ticket details sheet */}
+      <TicketDetails 
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        ticket={selectedTicket}
+      />
+    </div>
+  );
+};
+
+export default Tickets;
