@@ -1,5 +1,11 @@
-
-import { Ticket, TicketComment, Department, UserDetails } from '@/models';
+import { 
+  Ticket, 
+  Department, 
+  UserDetails, 
+  TicketStatus, 
+  TicketPriority, 
+  TicketComment 
+} from '@/models';
 
 // Generate random date within the last 30 days
 const randomDate = () => {

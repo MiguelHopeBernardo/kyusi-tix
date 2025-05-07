@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ticket } from '@/models';
+import { Ticket, TicketPriority } from '@/models';
 
 interface TicketDialogProps {
   open: boolean;
@@ -26,7 +26,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
   
   const [title, setTitle] = useState(editingTicket?.title || '');
   const [description, setDescription] = useState(editingTicket?.description || '');
-  const [priority, setPriority] = useState(editingTicket?.priority || 'medium');
+  const [priority, setPriority] = useState<TicketPriority>(editingTicket?.priority || 'medium');
   const [department, setDepartment] = useState<string | undefined>(editingTicket?.department || undefined);
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -108,7 +108,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
               <Label htmlFor="priority">Priority</Label>
               <Select 
                 value={priority} 
-                onValueChange={setPriority}
+                onValueChange={(value: TicketPriority) => setPriority(value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select priority" />

@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Outlet, Navigate, NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Dashboard,
-  Ticket,
+  LayoutDashboard,
+  TicketCheck,
   Users,
   Settings,
   MessageSquare,
@@ -34,13 +33,13 @@ const AppLayout = () => {
       {
         name: 'Dashboard',
         to: '/dashboard',
-        icon: Dashboard,
+        icon: LayoutDashboard,
         roles: ['admin', 'faculty', 'student', 'alumni'],
       },
       {
         name: 'Tickets',
         to: '/tickets',
-        icon: Ticket,
+        icon: TicketCheck,
         roles: ['admin', 'faculty', 'student', 'alumni'],
       },
       {
