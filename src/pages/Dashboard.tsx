@@ -1,208 +1,247 @@
 
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { TicketStatus, TicketPriority } from '@/models';
+import React, { useEffect, useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import TicketTable from '@/components/tickets/TicketTable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Ticket, TicketStatus } from '@/models';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  const { tickets } = useData();
   const { user } = useAuth();
-  const { 
-    tickets, 
-    getTicketStatsCounts, 
-    getMyTickets, 
-    getAssignedToMeTickets,
-    getOpenTickets
-  } = useData();
-  
-  const isAdmin = user?.role === 'admin';
-  
-  // Get ticket stats
-  const stats = getTicketStatsCounts();
-  
-  // Generate data for pie chart
-  const statusData = Object.entries(stats.statusCounts).map(([key, value]) => ({
-    name: key,
-    value,
-  }));
+  const navigate = useNavigate();
+  const [statusData, setStatusData] = useState<{ name: string, value: number, color: string }[]>([]);
+  const [openCount, setOpenCount] = useState(0);
+  const [urgentCount, setUrgentCount] = useState(0);
+  const [resolvedTodayCount, setResolvedTodayCount] = useState(0);
+  const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
+  const [myTickets, setMyTickets] = useState<Ticket[]>([]);
+  const [assignedTickets, setAssignedTickets] = useState<Ticket[]>([]);
   
   // Colors for pie chart
-  const STATUS_COLORS: Record<TicketStatus, string> = {
-    open: '#f97316',
-    in_progress: '#3b82f6',
-    on_hold: '#f59e0b',
-    resolved: '#10b981',
-    closed: '#6b7280',
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  
+  useEffect(() => {
+    // Filter tickets based on user role
+    const userTickets = user?.role === 'admin' 
+      ? tickets 
+      : tickets.filter(ticket => 
+          ticket.createdBy === user?.id || 
+          ticket.assignedTo === user?.id
+        );
+    
+    // Calculate status data for pie chart (admin only)
+    if (user?.role === 'admin') {
+      const statusCounts: Record<string, number> = {};
+      userTickets.forEach(ticket => {
+        statusCounts[ticket.status] = (statusCounts[ticket.status] || 0) + 1;
+      });
+      
+      const data = Object.entries(statusCounts).map(([status, count], index) => ({
+        name: formatStatus(status as TicketStatus),
+        value: count,
+        color: COLORS[index % COLORS.length]
+      }));
+      
+      setStatusData(data);
+    }
+    
+    // Calculate card metrics
+    setOpenCount(userTickets.filter(ticket => 
+      ['open', 'in_progress'].includes(ticket.status)).length);
+    
+    setUrgentCount(userTickets.filter(ticket => 
+      ticket.priority === 'urgent').length);
+    
+    // Get tickets resolved today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    setResolvedTodayCount(userTickets.filter(ticket => {
+      const updatedAt = new Date(ticket.updatedAt);
+      return ticket.status === 'resolved' && 
+        updatedAt >= today;
+    }).length);
+    
+    // Get recent tickets sorted by priority
+    const sortedTickets = [...userTickets].sort((a, b) => {
+      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
+    
+    setRecentTickets(sortedTickets.slice(0, 5));
+    
+    // Set my tickets
+    setMyTickets(tickets.filter(ticket => ticket.createdBy === user?.id));
+    
+    // Set assigned tickets
+    setAssignedTickets(tickets.filter(ticket => ticket.assignedTo === user?.id));
+    
+  }, [tickets, user]);
+  
+  const formatStatus = (status: TicketStatus): string => {
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
   
-  if (isAdmin) {
+  const handleViewTicket = (ticketId: string) => {
+    navigate(`/tickets/${ticketId}`);
+  };
+
+  // For non-admin users, show simplified dashboard
+  if (user?.role !== 'admin') {
     return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+      <div className="p-6 space-y-6 w-full">
+        <div className="flex flex-col space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
           <p className="text-muted-foreground">
-            Welcome back, {user?.name}!
+            Welcome back, {user?.name}
           </p>
         </div>
         
-        {/* Stats and Charts */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="col-span-2 md:col-span-1">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Ticket Status</CardTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>My Tickets</CardTitle>
+              <CardDescription>Tickets you've created</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
+            <CardContent>
+              <TicketTable 
+                tickets={myTickets} 
+                showSearch={false} 
+                emptyMessage="You haven't created any tickets yet." 
+                onViewTicket={handleViewTicket}
+              />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Assigned to Me</CardTitle>
+              <CardDescription>Tickets assigned to you</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TicketTable 
+                tickets={assignedTickets} 
+                showSearch={false} 
+                emptyMessage="No tickets are assigned to you." 
+                onViewTicket={handleViewTicket}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+  
+  // Admin Dashboard
+  return (
+    <div className="p-6 space-y-6 w-full">
+      <div className="flex flex-col space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <p className="text-muted-foreground">
+          Welcome back, {user?.name}
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Ticket Status</CardTitle>
+            <CardDescription>Distribution by status</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <div style={{ width: '100%', height: 200 }}>
+              {statusData.length > 0 ? (
+                <ResponsiveContainer>
                   <PieChart>
                     <Pie
                       data={statusData}
                       cx="50%"
                       cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
                       innerRadius={40}
+                      outerRadius={80}
                       paddingAngle={2}
                       dataKey="value"
-                      label={({ name, percent }) => 
-                        `${name} ${(percent * 100).toFixed(0)}%`
-                      }
+                      label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {statusData.map((entry) => (
-                        <Cell 
-                          key={entry.name} 
-                          fill={STATUS_COLORS[entry.name as TicketStatus] || '#888888'} 
-                        />
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      formatter={(value, name) => [value, name]}
-                      contentStyle={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid #ccc' }}
-                    />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
-              <CardDescription>
-                Tickets that need attention
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.open}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Urgent Tickets</CardTitle>
-              <CardDescription>
-                High priority items
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.urgent}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Resolved Today</CardTitle>
-              <CardDescription>
-                Completed tickets
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.resolvedToday}</div>
-            </CardContent>
-          </Card>
-        </div>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  No ticket data available
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
         
-        {/* Recent Tickets */}
-        <div>
-          <h3 className="text-lg font-medium mb-4">Recent Tickets</h3>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{openCount}</CardTitle>
+            <CardDescription>Open Tickets</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Tickets that need attention
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{urgentCount}</CardTitle>
+            <CardDescription>Urgent Tickets</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              High priority issues
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{resolvedTodayCount}</CardTitle>
+            <CardDescription>Resolved Today</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Issues fixed today
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Tickets</CardTitle>
+          <CardDescription>Sorted by priority</CardDescription>
+        </CardHeader>
+        <CardContent>
           <TicketTable 
-            tickets={getOpenTickets().sort((a, b) => {
-              const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-              return priorityOrder[a.priority as TicketPriority] - priorityOrder[b.priority as TicketPriority];
-            }).slice(0, 5)}
+            tickets={recentTickets} 
             showSearch={false}
-            emptyMessage="No recent tickets"
+            emptyMessage="No tickets to display" 
+            onViewTicket={handleViewTicket}
           />
-        </div>
-      </div>
-    );
-  } else {
-    // Dashboard for non-admin users (Faculty, Student, Alumni)
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Welcome back, {user?.name}!
-          </p>
-        </div>
-        
-        {/* Stats for non-admin users */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">My Tickets</CardTitle>
-              <CardDescription>
-                Tickets you've created
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{getMyTickets().length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Assigned To Me</CardTitle>
-              <CardDescription>
-                Tickets requiring your attention
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{getAssignedToMeTickets().length}</div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Ticket Tabs */}
-        <Tabs defaultValue="my">
-          <TabsList>
-            <TabsTrigger value="my">My Tickets</TabsTrigger>
-            <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="my" className="mt-4">
-            <TicketTable 
-              tickets={getMyTickets().slice(0, 5)}
-              showSearch={false}
-              emptyMessage="You haven't created any tickets"
-            />
-          </TabsContent>
-          
-          <TabsContent value="assigned" className="mt-4">
-            <TicketTable 
-              tickets={getAssignedToMeTickets().slice(0, 5)}
-              showSearch={false}
-              emptyMessage="No tickets assigned to you"
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-    );
-  }
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export default Dashboard;
