@@ -93,8 +93,9 @@ const Dashboard = () => {
       .join(' ');
   };
   
-  const handleViewTicket = (ticketId: string) => {
-    navigate(`/tickets/${ticketId}`);
+  // Fix: Update the function to accept a Ticket object instead of just the ID
+  const handleViewTicket = (ticket: Ticket) => {
+    navigate(`/tickets/${ticket.id}`);
   };
 
   // For non-admin users, show simplified dashboard
