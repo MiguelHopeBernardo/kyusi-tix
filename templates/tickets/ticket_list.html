@@ -1,0 +1,100 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'dashboard:dashboard' %}">KyusiTix</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard:dashboard' %}">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'tickets:ticket_list' %}">Tickets</a>
+                </li>
+                {% if user.is_staff %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'users:user_list' %}">Users</a>
+                </li>
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        {{ user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'users:profile' %}">Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tickets</h1>
+        <a href="{% url 'tickets:create_ticket' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Create Ticket
+        </a>
+    </div>
+    
+    {% if tickets %}
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>{{ ticket.subject }}</td>
+                    <td>
+                        <span class="badge {% if ticket.status == 'open' %}bg-danger{% elif ticket.status == 'in_progress' %}bg-warning{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if ticket.priority == 'high' %}bg-danger{% elif ticket.priority == 'medium' %}bg-warning{% else %}bg-info{% endif %}">
+                            {{ ticket.get_priority_display }}
+                        </span>
+                    </td>
+                    <td>{{ ticket.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'tickets:ticket_detail' ticket.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center p-5">
+            <h3>No tickets found</h3>
+            <p class="text-muted">Create your first ticket to get started</p>
+            <a href="{% url 'tickets:create_ticket' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-1"></i> Create Ticket
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

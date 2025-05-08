@@ -1,0 +1,68 @@
+
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header text-center bg-light">
+                    <div class="mb-3">
+                        <img src="https://www.pup.edu.ph/about/images/PUPLogo.png" alt="PUP Logo" height="80">
+                    </div>
+                    <h2>KyusiTix</h2>
+                    <p class="text-muted">PUP QC Ticketing System</p>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" name="username" id="username" class="form-control" placeholder="Enter your email" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <label for="password" class="form-label">Password</label>
+                                <a href="{% url 'password_reset' %}" class="small">Forgot password?</a>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Sign In</button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <p class="text-center text-muted small">
+                            Demo accounts:<br>
+                            admin@pupqc.edu.ph / faculty@pupqc.edu.ph / student@pupqc.edu.ph<br>
+                            Password: password
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
