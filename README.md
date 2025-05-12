@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
 
-## Project info
+# Welcome to KyusiTix Ticketing System
 
-**URL**: https://lovable.dev/projects/27ef5806-eb5b-416b-8c67-813a42467d66
+KyusiTix is a ticketing system built with Django and React. This repository contains both the backend (Django) and frontend (React with Vite) code.
 
-## How can I edit this code?
+## Project Structure
 
-There are several ways of editing your application.
+The project has the following main components:
+- Django backend (tickets, users, dashboard apps)
+- React frontend (in the src directory)
 
-**Use Lovable**
+## Setup Instructions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/27ef5806-eb5b-416b-8c67-813a42467d66) and start prompting.
+### Prerequisites
+- Python 3.8+
+- PostgreSQL
+- Node.js and npm/yarn
 
-Changes made via Lovable will be committed automatically to this repo.
+### Backend Setup (Django)
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
+1. Create and activate a virtual environment:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Create a virtual environment
+python -m venv venv
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Activate the virtual environment
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Install Python dependencies:
+```sh
+pip install -r requirements.txt
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Configure PostgreSQL:
+   - Install PostgreSQL if not already installed
+   - Create a database for the project:
+```sql
+CREATE DATABASE kyusitix;
+CREATE USER kyusitix_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE kyusitix TO kyusitix_user;
+```
+
+4. Update database settings in `ticketing_system/settings.py`:
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'kyusitix',
+        'USER': 'kyusitix_user',  # or your PostgreSQL username
+        'PASSWORD': 'your_secure_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+```
+
+5. Run migrations and create superuser:
+```sh
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+6. Run the Django development server:
+```sh
+python manage.py runserver
+```
+
+### Frontend Setup (React/Vite)
+
+1. Install Node.js dependencies:
+```sh
+npm install
+```
+
+2. Run the Vite development server:
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Option 1: Deploy Django Backend to PythonAnywhere
+1. Create a PythonAnywhere account and set up a web app
+2. Upload the code via Git or manual upload
+3. Set up a virtual environment and install dependencies
+4. Configure the database (PostgreSQL)
+5. Update ALLOWED_HOSTS and other settings for production
+6. Collect static files: `python manage.py collectstatic`
 
-**Use GitHub Codespaces**
+### Option 2: Deploy to Heroku
+1. Install the Heroku CLI
+2. Create a Procfile in the project root:
+```
+web: gunicorn ticketing_system.wsgi
+```
+3. Add necessary Heroku configuration settings
+4. Deploy using Git:
+```sh
+heroku create your-app-name
+git push heroku main
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/27ef5806-eb5b-416b-8c67-813a42467d66) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Project URLs
+- Admin interface: http://localhost:8000/admin/
+- Login page: http://localhost:8000/login/
+- Dashboard: http://localhost:8000/dashboard/
+- Tickets: http://localhost:8000/tickets/
