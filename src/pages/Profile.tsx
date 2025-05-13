@@ -120,38 +120,6 @@ const Profile = () => {
                 </Button>
               </form>
             </div>
-            
-            <div className="pt-4 border-t">
-              <div className="mb-4">
-                <h3 className="font-medium text-lg">Notification Preferences</h3>
-                <p className="text-muted-foreground text-sm">Manage your notification settings</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="flex items-center space-x-2">
-                  <input type="checkbox" className="rounded text-primary" defaultChecked />
-                  <span>Email notifications for ticket updates</span>
-                </Label>
-                
-                <Label className="flex items-center space-x-2">
-                  <input type="checkbox" className="rounded text-primary" defaultChecked />
-                  <span>Email notifications for comments</span>
-                </Label>
-                
-                <Label className="flex items-center space-x-2">
-                  <input type="checkbox" className="rounded text-primary" />
-                  <span>Email digest of daily activities</span>
-                </Label>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                className="w-full mt-4"
-                onClick={() => toast.success("Notification preferences saved")}
-              >
-                Save Preferences
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>

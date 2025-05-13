@@ -92,11 +92,6 @@ const Dashboard = () => {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
-  
-  // Fix: Update the handleViewTicket function to properly navigate to ticket detail
-  const handleViewTicket = (ticket: Ticket) => {
-    navigate(`/tickets`);
-  };
 
   // For non-admin users, don't render the dashboard - user will be redirected
   if (user?.role !== 'admin') {
@@ -197,7 +192,7 @@ const Dashboard = () => {
             tickets={recentTickets} 
             showSearch={false}
             emptyMessage="No tickets to display" 
-            onViewTicket={handleViewTicket}
+            onViewTicket={null} // Removed the view functionality
           />
         </CardContent>
       </Card>

@@ -87,6 +87,11 @@ const AppLayout = () => {
     }
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
@@ -163,10 +168,7 @@ const AppLayout = () => {
           <Button 
             variant="ghost" 
             className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
-            onClick={() => {
-              logout();
-              setSidebarOpen(false);
-            }}
+            onClick={handleLogout}
           >
             <LogOut className="mr-3 h-5 w-5" />
             <span>Sign Out</span>

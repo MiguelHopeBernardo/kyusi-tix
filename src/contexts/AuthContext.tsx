@@ -103,11 +103,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Logout function
+  // Logout function - Redirect to login page
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
     toast.success("Logged out successfully");
+    // Force navigation to login page
+    window.location.href = "/login";
   };
   
   // Forgot password function
