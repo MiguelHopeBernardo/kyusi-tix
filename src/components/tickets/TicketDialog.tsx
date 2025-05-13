@@ -39,7 +39,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
         title,
         description,
         priority: priority as any,
-        department,
+        department: department === 'none' ? undefined : department,
       });
     } else {
       addTicket({
@@ -51,7 +51,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
         creatorName: user.name,
         creatorAvatar: user.avatar,
         creatorRole: user.role,
-        department,
+        department: department === 'none' ? undefined : department,
       });
     }
     
@@ -71,6 +71,11 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
       setPriority(editingTicket.priority);
       setDepartment(editingTicket.department);
     }
+  };
+  
+  // Handle department change
+  const handleDepartmentChange = (value: string) => {
+    setDepartment(value === 'none' ? undefined : value);
   };
   
   return (
@@ -125,13 +130,14 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               <Select 
-                value={department || ''} 
-                onValueChange={setDepartment}
+                value={department !== undefined ? department : 'none'} 
+                onValueChange={handleDepartmentChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   {departments.map((dept) => (
                     <SelectItem key={dept.id} value={dept.name}>
                       {dept.name}

@@ -98,7 +98,7 @@ const Users = () => {
       name,
       email,
       role,
-      department,
+      department: department === 'none' ? undefined : department,
       position: position || undefined,
       studentId: studentId || undefined,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
@@ -112,6 +112,11 @@ const Users = () => {
     
     setUserDialogOpen(false);
     resetForm();
+  };
+  
+  // Handle department change
+  const handleDepartmentChange = (value: string) => {
+    setDepartment(value === 'none' ? undefined : value);
   };
   
   // Filter users
@@ -283,12 +288,15 @@ const Users = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Select value={department || ''} onValueChange={setDepartment}>
+                <Select 
+                  value={department !== undefined ? department : 'none'} 
+                  onValueChange={handleDepartmentChange}
+                >
                   <SelectTrigger id="department">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.name}>
                         {dept.name}
