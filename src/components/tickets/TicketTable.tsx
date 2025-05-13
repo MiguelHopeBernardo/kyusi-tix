@@ -17,9 +17,10 @@ import { Ticket } from '@/models';
 
 interface TicketTableProps {
   tickets: Ticket[];
-  onViewTicket: (ticket: Ticket) => void;
+  onViewTicket?: (ticket: Ticket) => void;
   emptyMessage?: string;
   showSearch?: boolean;
+  hideActionColumn?: boolean;
 }
 
 const TicketTable: React.FC<TicketTableProps> = ({
@@ -27,6 +28,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   onViewTicket,
   emptyMessage = "No tickets found",
   showSearch = true,
+  hideActionColumn = false,
 }) => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,7 +87,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 <TableHead className="hidden sm:table-cell">Priority</TableHead>
                 <TableHead className="hidden lg:table-cell">Assigned To</TableHead>
                 <TableHead className="hidden sm:table-cell">Updated</TableHead>
-                <TableHead>Actions</TableHead>
+                {!hideActionColumn && <TableHead>Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -107,15 +109,17 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   <TableCell className="hidden sm:table-cell">
                     {getRelativeTime(ticket.updatedAt)}
                   </TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => onViewTicket(ticket)}
-                    >
-                      View
-                    </Button>
-                  </TableCell>
+                  {!hideActionColumn && (
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => onViewTicket && onViewTicket(ticket)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

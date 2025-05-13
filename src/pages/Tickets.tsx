@@ -5,7 +5,7 @@ import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Download, FileText } from 'lucide-react';
+import { PlusCircle, Download } from 'lucide-react';
 import TicketTable from '@/components/tickets/TicketTable';
 import TicketDialog from '@/components/tickets/TicketDialog';
 import TicketDetails from '@/components/tickets/TicketDetails';
@@ -71,16 +71,6 @@ const Tickets = () => {
     URL.revokeObjectURL(url);
     
     toast.success("Tickets exported successfully");
-  };
-  
-  const handleExportPDF = () => {
-    toast.info("Preparing PDF export...");
-    
-    // This would normally connect to a PDF generation service
-    // For now, we'll just show a toast message
-    setTimeout(() => {
-      toast.success("PDF export functionality will be implemented with a PDF library");
-    }, 1500);
   };
   
   // Only show tabs that are relevant to the user's role
@@ -155,15 +145,6 @@ const Tickets = () => {
           >
             <Download className="mr-2 h-4 w-4" />
             Export CSV
-          </Button>
-          
-          <Button 
-            onClick={handleExportPDF}
-            variant="outline"
-            className="hidden sm:flex"
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            Export PDF
           </Button>
           
           <Button onClick={() => setNewTicketDialogOpen(true)}>

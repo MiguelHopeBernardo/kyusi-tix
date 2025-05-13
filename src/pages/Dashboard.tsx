@@ -191,8 +191,8 @@ const Dashboard = () => {
           <TicketTable 
             tickets={recentTickets} 
             showSearch={false}
-            emptyMessage="No tickets to display" 
-            onViewTicket={null} // Removed the view functionality
+            emptyMessage="No tickets to display"
+            hideActionColumn={true}
           />
         </CardContent>
       </Card>
