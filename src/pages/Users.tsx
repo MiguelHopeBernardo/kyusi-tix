@@ -269,7 +269,7 @@ const Users = () => {
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger>
+                  <SelectTrigger id="role">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -284,7 +284,7 @@ const Users = () => {
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <Select value={department || ''} onValueChange={setDepartment}>
-                  <SelectTrigger>
+                  <SelectTrigger id="department">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>

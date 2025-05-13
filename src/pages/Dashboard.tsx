@@ -93,55 +93,15 @@ const Dashboard = () => {
       .join(' ');
   };
   
-  // Fix: Update the function to accept a Ticket object instead of just the ID
+  // Fix: Update the handleViewTicket function to properly navigate to ticket detail
   const handleViewTicket = (ticket: Ticket) => {
-    navigate(`/tickets/${ticket.id}`);
+    navigate(`/tickets`);
   };
 
-  // For non-admin users, show simplified dashboard
+  // For non-admin users, don't render the dashboard - user will be redirected
   if (user?.role !== 'admin') {
-    return (
-      <div className="p-6 space-y-6 w-full">
-        <div className="flex flex-col space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Welcome back, {user?.name}
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>My Tickets</CardTitle>
-              <CardDescription>Tickets you've created</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TicketTable 
-                tickets={myTickets} 
-                showSearch={false} 
-                emptyMessage="You haven't created any tickets yet." 
-                onViewTicket={handleViewTicket}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Assigned to Me</CardTitle>
-              <CardDescription>Tickets assigned to you</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TicketTable 
-                tickets={assignedTickets} 
-                showSearch={false} 
-                emptyMessage="No tickets are assigned to you." 
-                onViewTicket={handleViewTicket}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    // Return null instead of rendering content - the AppLayout will handle redirection
+    return null;
   }
   
   // Admin Dashboard

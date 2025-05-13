@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Outlet, Navigate, NavLink } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { Outlet, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard,
@@ -21,11 +22,20 @@ const AppLayout = () => {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" />;
   }
+  
+  // Redirect non-admin users from dashboard to tickets page
+  useEffect(() => {
+    if (user?.role !== 'admin' && location.pathname === '/dashboard') {
+      navigate('/tickets');
+    }
+  }, [user, location.pathname, navigate]);
 
   // Navigation items based on user role
   const navigationItems = () => {
@@ -34,7 +44,8 @@ const AppLayout = () => {
         name: 'Dashboard',
         to: '/dashboard',
         icon: LayoutDashboard,
-        roles: ['admin', 'faculty', 'student', 'alumni'],
+        // Only show dashboard for admin users
+        roles: ['admin'],
       },
       {
         name: 'Tickets',

@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Download } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, Download, FileText } from 'lucide-react';
 import TicketTable from '@/components/tickets/TicketTable';
 import TicketDialog from '@/components/tickets/TicketDialog';
 import TicketDetails from '@/components/tickets/TicketDetails';
@@ -72,6 +73,16 @@ const Tickets = () => {
     toast.success("Tickets exported successfully");
   };
   
+  const handleExportPDF = () => {
+    toast.info("Preparing PDF export...");
+    
+    // This would normally connect to a PDF generation service
+    // For now, we'll just show a toast message
+    setTimeout(() => {
+      toast.success("PDF export functionality will be implemented with a PDF library");
+    }, 1500);
+  };
+  
   // Only show tabs that are relevant to the user's role
   const renderTabs = () => {
     const isAdmin = user?.role === 'admin';
@@ -95,6 +106,37 @@ const Tickets = () => {
     }
   };
   
+  // For non-admin users, show statistics at the top
+  const renderNonAdminStatsCards = () => {
+    if (user?.role === 'admin') return null;
+    
+    const myTickets = getMyTickets();
+    const assignedTickets = getAssignedToMeTickets();
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-medium">My Tickets</p>
+            <p className="text-xs text-muted-foreground">Tickets you've created</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-2xl">{assignedTickets.length}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-medium">Assigned To Me</p>
+            <p className="text-xs text-muted-foreground">Tickets requiring your attention</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -115,12 +157,24 @@ const Tickets = () => {
             Export CSV
           </Button>
           
+          <Button 
+            onClick={handleExportPDF}
+            variant="outline"
+            className="hidden sm:flex"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          
           <Button onClick={() => setNewTicketDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             New Ticket
           </Button>
         </div>
       </div>
+      
+      {/* Non-admin stat cards */}
+      {renderNonAdminStatsCards()}
       
       <Tabs defaultValue={user?.role === 'admin' ? 'open' : 'my'}>
         {renderTabs()}
