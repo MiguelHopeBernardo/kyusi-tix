@@ -14,6 +14,7 @@ import { getStatusBadge } from '@/components/tickets/TicketStatusBadge';
 import { getPriorityBadge } from '@/components/tickets/TicketPriorityBadge';
 import { Ticket, TicketStatus } from '@/models';
 import { cn } from '@/lib/utils';
+import FileAttachmentDisplay from '@/components/tickets/FileAttachmentDisplay';
 
 interface TicketDetailsProps {
   open: boolean;
@@ -27,7 +28,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   ticket,
 }) => {
   const { user } = useAuth();
-  const { updateTicket, addTicketComment, users, assignTicket } = useData();
+  const { updateTicket, addTicketComment, users, assignTicket, deleteAttachment } = useData();
   
   const [comment, setComment] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
@@ -61,6 +62,11 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
     if (!ticket || !comment.trim()) return;
     addTicketComment(ticket.id, comment, isInternalNote);
     setComment('');
+  };
+  
+  const handleDeleteAttachment = (attachmentId: string) => {
+    if (!ticket) return;
+    deleteAttachment(ticket.id, attachmentId);
   };
   
   // Update local state when ticket changes
@@ -131,6 +137,15 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
             <div className="mt-4 p-3 border rounded-md bg-muted/50">
               <p className="whitespace-pre-wrap">{ticket.description}</p>
             </div>
+            
+            {/* Display attachments if any */}
+            {ticket.attachments && ticket.attachments.length > 0 && (
+              <FileAttachmentDisplay 
+                attachments={ticket.attachments} 
+                canDelete={canManageTicket || ticket.createdBy === user?.id} 
+                onDelete={handleDeleteAttachment}
+              />
+            )}
           </div>
           
           <Separator />

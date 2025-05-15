@@ -1,6 +1,5 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Ticket, Department, UserDetails, TicketStatus, TicketPriority } from '@/models';
+import { Ticket, Department, UserDetails, TicketStatus, TicketPriority, FileAttachment } from '@/models';
 import { mockTickets, mockDepartments, mockUsers } from '@/services/mockData';
 import { useAuth } from './AuthContext';
 import { toast } from "@/components/ui/sonner";
@@ -9,8 +8,8 @@ interface DataContextType {
   tickets: Ticket[];
   departments: Department[];
   users: UserDetails[];
-  addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>) => void;
-  updateTicket: (id: string, updates: Partial<Ticket>) => void;
+  addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>, files?: File[]) => void;
+  updateTicket: (id: string, updates: Partial<Ticket>, files?: File[]) => void;
   deleteTicket: (id: string) => void;
   addTicketComment: (ticketId: string, content: string, isInternal: boolean) => void;
   addUser: (user: Omit<UserDetails, 'id' | 'createdAt'>) => void;
@@ -32,6 +31,7 @@ interface DataContextType {
   getOpenTickets: () => Ticket[];
   getClosedTickets: () => Ticket[];
   getUserById: (id: string) => UserDetails | undefined;
+  deleteAttachment: (ticketId: string, attachmentId: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -42,14 +42,43 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<UserDetails[]>(mockUsers);
   const { user } = useAuth();
 
+  // Helper function to convert File objects to FileAttachment
+  const processFiles = (files: File[], ticketId: string): FileAttachment[] => {
+    if (!files || files.length === 0) return [];
+    if (!user) return [];
+    
+    return files.map(file => {
+      const fileType = file.type as 'image/jpeg' | 'image/png' | 'application/pdf';
+      
+      // Create object URL for preview
+      const fileUrl = URL.createObjectURL(file);
+      
+      return {
+        id: `attachment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        ticketId: ticketId,
+        filename: file.name,
+        fileType: fileType,
+        fileUrl: fileUrl,
+        fileSize: file.size,
+        uploadedBy: user.id,
+        uploadedAt: new Date().toISOString()
+      };
+    });
+  };
+
   // Add a new ticket
-  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>) => {
+  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>, files: File[] = []) => {
+    const ticketId = `ticket-${Date.now()}`;
+    
+    const newAttachments = processFiles(files, ticketId);
+    
     const newTicket: Ticket = {
       ...ticket,
-      id: `ticket-${Date.now()}`,
+      id: ticketId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       comments: [],
+      attachments: newAttachments,
     };
     
     setTickets(prev => [newTicket, ...prev]);
@@ -58,19 +87,63 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Update an existing ticket
-  const updateTicket = (id: string, updates: Partial<Ticket>) => {
+  const updateTicket = (id: string, updates: Partial<Ticket>, files: File[] = []) => {
     setTickets(prev => 
-      prev.map(ticket => 
-        ticket.id === id 
-          ? { ...ticket, ...updates, updatedAt: new Date().toISOString() } 
-          : ticket
-      )
+      prev.map(ticket => {
+        if (ticket.id === id) {
+          // Process new attachments if any
+          const newAttachments = processFiles(files, id);
+          
+          return { 
+            ...ticket, 
+            ...updates, 
+            updatedAt: new Date().toISOString(),
+            attachments: [
+              ...(ticket.attachments || []),
+              ...newAttachments
+            ]
+          };
+        }
+        return ticket;
+      })
     );
     toast.success("Ticket updated successfully");
   };
 
+  // Delete attachment from a ticket
+  const deleteAttachment = (ticketId: string, attachmentId: string) => {
+    setTickets(prev => 
+      prev.map(ticket => {
+        if (ticket.id === ticketId && ticket.attachments) {
+          // Find the attachment to revoke its URL
+          const attachmentToDelete = ticket.attachments.find(a => a.id === attachmentId);
+          if (attachmentToDelete && attachmentToDelete.fileUrl) {
+            URL.revokeObjectURL(attachmentToDelete.fileUrl);
+          }
+          
+          return {
+            ...ticket,
+            attachments: ticket.attachments.filter(a => a.id !== attachmentId)
+          };
+        }
+        return ticket;
+      })
+    );
+    toast.success("Attachment deleted successfully");
+  };
+
   // Delete a ticket
   const deleteTicket = (id: string) => {
+    // Find ticket to clean up any attachment URLs before removing
+    const ticketToDelete = tickets.find(t => t.id === id);
+    if (ticketToDelete && ticketToDelete.attachments) {
+      ticketToDelete.attachments.forEach(attachment => {
+        if (attachment.fileUrl) {
+          URL.revokeObjectURL(attachment.fileUrl);
+        }
+      });
+    }
+    
     setTickets(prev => prev.filter(ticket => ticket.id !== id));
     toast.success("Ticket deleted successfully");
   };
@@ -234,6 +307,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return users.find(user => user.id === id);
   };
 
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      tickets.forEach(ticket => {
+        if (ticket.attachments) {
+          ticket.attachments.forEach(attachment => {
+            if (attachment.fileUrl) {
+              URL.revokeObjectURL(attachment.fileUrl);
+            }
+          });
+        }
+      });
+    };
+  }, []);
+
   return (
     <DataContext.Provider value={{
       tickets,
@@ -256,6 +344,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getOpenTickets,
       getClosedTickets,
       getUserById,
+      deleteAttachment,
     }}>
       {children}
     </DataContext.Provider>

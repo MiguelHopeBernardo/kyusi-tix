@@ -2,13 +2,21 @@
 import React from 'react';
 import { FileAttachment } from '@/models';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileImage, FileText, File } from 'lucide-react';
+import { FileImage, FileText, File, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/sonner';
 
 interface FileAttachmentDisplayProps {
   attachments: FileAttachment[];
+  canDelete?: boolean;
+  onDelete?: (attachmentId: string) => void;
 }
 
-const FileAttachmentDisplay: React.FC<FileAttachmentDisplayProps> = ({ attachments }) => {
+const FileAttachmentDisplay: React.FC<FileAttachmentDisplayProps> = ({ 
+  attachments,
+  canDelete = false,
+  onDelete
+}) => {
   if (!attachments || attachments.length === 0) {
     return null;
   }
@@ -33,6 +41,12 @@ const FileAttachmentDisplay: React.FC<FileAttachmentDisplayProps> = ({ attachmen
     }
   };
 
+  const handleDelete = (attachmentId: string) => {
+    if (onDelete) {
+      onDelete(attachmentId);
+    }
+  };
+
   return (
     <div className="mt-6">
       <h3 className="text-lg font-medium mb-3">Attachments ({attachments.length})</h3>
@@ -40,20 +54,34 @@ const FileAttachmentDisplay: React.FC<FileAttachmentDisplayProps> = ({ attachmen
         {attachments.map((attachment) => (
           <Card key={attachment.id} className="overflow-hidden">
             <CardContent className="p-3">
-              <a 
-                href={attachment.fileUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 hover:bg-muted p-2 rounded-md transition-colors"
-              >
-                {getFileIcon(attachment.fileType)}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{attachment.filename}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatFileSize(attachment.fileSize)}
-                  </p>
-                </div>
-              </a>
+              <div className="flex justify-between items-center">
+                <a 
+                  href={attachment.fileUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 hover:bg-muted p-2 rounded-md transition-colors flex-1"
+                >
+                  {getFileIcon(attachment.fileType)}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{attachment.filename}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatFileSize(attachment.fileSize)}
+                    </p>
+                  </div>
+                </a>
+                
+                {canDelete && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDelete(attachment.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete attachment</span>
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         ))}

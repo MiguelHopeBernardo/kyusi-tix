@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Ticket, TicketPriority } from '@/models';
+import FileUploadField from '@/components/tickets/FileUploadField';
 
 interface TicketDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
   const [description, setDescription] = useState(editingTicket?.description || '');
   const [priority, setPriority] = useState<TicketPriority>(editingTicket?.priority || 'medium');
   const [department, setDepartment] = useState<string | undefined>(editingTicket?.department || undefined);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
         description,
         priority: priority as any,
         department: department === 'none' ? undefined : department,
-      });
+      }, selectedFiles);
     } else {
       addTicket({
         title,
@@ -52,7 +54,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
         creatorAvatar: user.avatar,
         creatorRole: user.role,
         department: department === 'none' ? undefined : department,
-      });
+      }, selectedFiles);
     }
     
     resetForm();
@@ -65,17 +67,24 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
       setDescription('');
       setPriority('medium');
       setDepartment(undefined);
+      setSelectedFiles([]);
     } else {
       setTitle(editingTicket.title);
       setDescription(editingTicket.description);
       setPriority(editingTicket.priority);
       setDepartment(editingTicket.department);
+      setSelectedFiles([]);
     }
   };
   
   // Handle department change
   const handleDepartmentChange = (value: string) => {
     setDepartment(value === 'none' ? undefined : value);
+  };
+  
+  // Handle file selection
+  const handleFilesSelected = (files: File[]) => {
+    setSelectedFiles(files);
   };
   
   return (
@@ -146,6 +155,11 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Attachments (Optional)</Label>
+            <FileUploadField onFilesSelected={handleFilesSelected} maxFiles={3} />
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
