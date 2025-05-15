@@ -13,7 +13,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { getStatusBadge } from '@/components/tickets/TicketStatusBadge';
 import { getPriorityBadge } from '@/components/tickets/TicketPriorityBadge';
-import { Ticket } from '@/models';
+import { Ticket, TicketPriority, TicketStatus } from '@/models';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuLabel, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { ArrowDownUp, Filter } from 'lucide-react';
 
 interface TicketTableProps {
   tickets: Ticket[];
@@ -32,14 +41,56 @@ const TicketTable: React.FC<TicketTableProps> = ({
 }) => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterPriority, setFilterPriority] = useState<TicketPriority | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<TicketStatus | 'all'>('all');
+  const [sortField, setSortField] = useState<'updatedAt' | 'id' | 'priority'>('updatedAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
-  const filteredTickets = tickets.filter(ticket =>
-    ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (ticket.department && ticket.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    ticket.creatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (ticket.assigneeName && ticket.assigneeName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const handleSort = (field: 'updatedAt' | 'id' | 'priority') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+  
+  const filteredTickets = tickets.filter(ticket => {
+    // Text search filter
+    const matchesSearch = 
+      ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ticket.department && ticket.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      ticket.creatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ticket.assigneeName && ticket.assigneeName.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Priority filter
+    const matchesPriority = filterPriority === 'all' || ticket.priority === filterPriority;
+    
+    // Status filter
+    const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
+    
+    return matchesSearch && matchesPriority && matchesStatus;
+  });
+  
+  // Sort the tickets
+  const sortedTickets = [...filteredTickets].sort((a, b) => {
+    if (sortField === 'id') {
+      return sortDirection === 'asc' 
+        ? a.id.localeCompare(b.id)
+        : b.id.localeCompare(a.id);
+    } else if (sortField === 'priority') {
+      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+      return sortDirection === 'asc'
+        ? priorityOrder[a.priority] - priorityOrder[b.priority]
+        : priorityOrder[b.priority] - priorityOrder[a.priority];
+    } else {
+      // Default sort by updatedAt
+      return sortDirection === 'asc'
+        ? new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+        : new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    }
+  });
   
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -64,18 +115,90 @@ const TicketTable: React.FC<TicketTableProps> = ({
   
   return (
     <div className="space-y-4">
-      {showSearch && (
-        <div>
-          <Input
-            placeholder="Search tickets..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {showSearch && (
+          <div className="flex-1">
+            <Input
+              placeholder="Search tickets..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+        )}
+        
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" />
+                Filter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setFilterStatus('all')}>
+                All Statuses
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterStatus('open')}>
+                Open
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterStatus('in_progress')}>
+                In Progress
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterStatus('on_hold')}>
+                On Hold
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterStatus('resolved')}>
+                Resolved
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterStatus('closed')}>
+                Closed
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Filter by Priority</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setFilterPriority('all')}>
+                All Priorities
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterPriority('urgent')}>
+                Urgent
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterPriority('high')}>
+                High
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterPriority('medium')}>
+                Medium
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterPriority('low')}>
+                Low
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <ArrowDownUp className="mr-2 h-4 w-4" />
+                Sort
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleSort('updatedAt')}>
+                Last Updated {sortField === 'updatedAt' && (sortDirection === 'asc' ? '(Oldest)' : '(Newest)')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSort('id')}>
+                Ticket Number {sortField === 'id' && (sortDirection === 'asc' ? '(A-Z)' : '(Z-A)')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSort('priority')}>
+                Priority {sortField === 'priority' && (sortDirection === 'asc' ? '(Low to High)' : '(High to Low)')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
+      </div>
       
-      {filteredTickets.length > 0 ? (
+      {sortedTickets.length > 0 ? (
         <div className="rounded-md border overflow-hidden">
           <Table>
             <TableHeader>
@@ -91,7 +214,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTickets.map((ticket) => (
+              {sortedTickets.map((ticket) => (
                 <TableRow key={ticket.id}>
                   <TableCell>
                     <div className="font-medium">

@@ -3,6 +3,12 @@ from django import forms
 from .models import Ticket, TicketComment
 
 class TicketForm(forms.ModelForm):
+    attachments = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        help_text='Upload JPEG, PNG, or PDF files (max 10MB each)'
+    )
+    
     class Meta:
         model = Ticket
         fields = ['subject', 'description', 'priority', 'department']
@@ -11,9 +17,15 @@ class TicketForm(forms.ModelForm):
         }
 
 class TicketUpdateForm(forms.ModelForm):
+    attachments = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        help_text='Upload JPEG, PNG, or PDF files (max 10MB each)'
+    )
+    
     class Meta:
         model = Ticket
-        fields = ['subject', 'description', 'status', 'priority', 'assigned_to', 'department']
+        fields = ['subject', 'description', 'status', 'priority', 'department', 'assigned_to']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
         }
@@ -23,8 +35,5 @@ class TicketCommentForm(forms.ModelForm):
         model = TicketComment
         fields = ['content']
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Add a comment...'}),
-        }
-        labels = {
-            'content': '',
+            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Add your comment here...'}),
         }

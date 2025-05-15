@@ -18,6 +18,18 @@ export interface TicketComment {
   isInternal: boolean; // For staff-only comments
 }
 
+// File attachment interface
+export interface FileAttachment {
+  id: string;
+  ticketId: string;
+  filename: string;
+  fileType: 'image/jpeg' | 'image/png' | 'application/pdf';
+  fileUrl: string;
+  fileSize: number;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
 // Ticket interface
 export interface Ticket {
   id: string;
@@ -36,6 +48,7 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string;
   comments: TicketComment[];
+  attachments?: FileAttachment[];
 }
 
 // Department interface

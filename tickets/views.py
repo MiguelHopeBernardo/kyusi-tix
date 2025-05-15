@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Ticket, TicketComment
+from .models import Ticket, TicketComment, TicketAttachment
 from .forms import TicketForm, TicketUpdateForm, TicketCommentForm
 
 @login_required
@@ -56,6 +56,25 @@ def create_ticket(request):
             ticket = form.save(commit=False)
             ticket.created_by = request.user
             ticket.save()
+            
+            # Handle file attachments
+            files = request.FILES.getlist('attachments')
+            for file in files:
+                # Check file type
+                if not file.content_type in ['image/jpeg', 'image/png', 'application/pdf']:
+                    continue
+                
+                # Create attachment
+                attachment = TicketAttachment(
+                    ticket=ticket,
+                    file=file,
+                    filename=file.name,
+                    file_type=file.content_type,
+                    file_size=file.size,
+                    uploaded_by=request.user
+                )
+                attachment.save()
+            
             messages.success(request, 'Ticket created successfully!')
             return redirect('tickets:ticket_detail', ticket_id=ticket.id)
     else:
@@ -81,6 +100,25 @@ def update_ticket(request, ticket_id):
             
         if form.is_valid():
             form.save()
+            
+            # Handle file attachments
+            files = request.FILES.getlist('attachments')
+            for file in files:
+                # Check file type
+                if not file.content_type in ['image/jpeg', 'image/png', 'application/pdf']:
+                    continue
+                
+                # Create attachment
+                attachment = TicketAttachment(
+                    ticket=ticket,
+                    file=file,
+                    filename=file.name,
+                    file_type=file.content_type,
+                    file_size=file.size,
+                    uploaded_by=request.user
+                )
+                attachment.save()
+                
             messages.success(request, 'Ticket updated successfully!')
             return redirect('tickets:ticket_detail', ticket_id=ticket.id)
     else:
@@ -91,3 +129,19 @@ def update_ticket(request, ticket_id):
             form = TicketForm(instance=ticket)
     
     return render(request, 'tickets/update_ticket.html', {'form': form, 'ticket': ticket})
+
+@login_required
+def delete_attachment(request, attachment_id):
+    attachment = get_object_or_404(TicketAttachment, id=attachment_id)
+    
+    # Check permissions
+    if not request.user.is_staff and request.user != attachment.uploaded_by:
+        messages.error(request, "You don't have permission to delete this attachment")
+        return redirect('tickets:ticket_detail', ticket_id=attachment.ticket.id)
+    
+    ticket_id = attachment.ticket.id
+    attachment.file.delete()  # Delete actual file
+    attachment.delete()       # Delete database record
+    
+    messages.success(request, 'Attachment deleted successfully!')
+    return redirect('tickets:ticket_detail', ticket_id=ticket_id)
