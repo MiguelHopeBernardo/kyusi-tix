@@ -2,46 +2,12 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, Edit, Trash, Filter } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { PlusCircle } from 'lucide-react';
 import { UserDetails } from '@/models';
+import UserFilter from '@/components/users/UserFilter';
+import UserForm from '@/components/users/UserForm';
+import UserTable from '@/components/users/UserTable';
+import DeleteUserDialog from '@/components/users/DeleteUserDialog';
 
 const Users = () => {
   const { users, departments, addUser, updateUser, deleteUser } = useData();
@@ -150,28 +116,6 @@ const Users = () => {
     return matchesSearch && matchesRole && matchesDepartment;
   });
   
-  // Reset filters
-  const resetFilters = () => {
-    setRoleFilter(null);
-    setDepartmentFilter(null);
-  };
-  
-  // Get role badge
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Badge className="bg-pup-maroon">Admin</Badge>;
-      case 'faculty':
-        return <Badge className="bg-pup-navy">Faculty</Badge>;
-      case 'student':
-        return <Badge variant="secondary">Student</Badge>;
-      case 'alumni':
-        return <Badge className="bg-pup-gold text-black">Alumni</Badge>;
-      default:
-        return <Badge variant="outline">{role}</Badge>;
-    }
-  };
-  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -188,356 +132,49 @@ const Users = () => {
         </Button>
       </div>
       
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search users..."
-            className="w-full pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="ml-auto">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-                {(roleFilter || departmentFilter) && (
-                  <Badge variant="secondary" className="ml-2 rounded-sm px-1">
-                    {(roleFilter ? 1 : 0) + (departmentFilter ? 1 : 0)}
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuLabel>Filter by</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Role</DropdownMenuLabel>
-                <DropdownMenuItem 
-                  className={!roleFilter ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setRoleFilter(null)}
-                >
-                  All Roles
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className={roleFilter === "admin" ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setRoleFilter("admin")}
-                >
-                  Admin
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className={roleFilter === "faculty" ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setRoleFilter("faculty")}
-                >
-                  Faculty
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className={roleFilter === "student" ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setRoleFilter("student")}
-                >
-                  Student
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className={roleFilter === "alumni" ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setRoleFilter("alumni")}
-                >
-                  Alumni
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Department</DropdownMenuLabel>
-                <DropdownMenuItem 
-                  className={!departmentFilter ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setDepartmentFilter(null)}
-                >
-                  All Departments
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className={departmentFilter === "none" ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setDepartmentFilter("none")}
-                >
-                  No Department
-                </DropdownMenuItem>
-                {departments.map((dept) => (
-                  <DropdownMenuItem
-                    key={dept.id}
-                    className={departmentFilter === dept.name ? "bg-accent text-accent-foreground" : ""}
-                    onClick={() => setDepartmentFilter(dept.name)}
-                  >
-                    {dept.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-              
-              <DropdownMenuSeparator />
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-center text-center"
-                onClick={resetFilters}
-              >
-                Reset Filters
-              </Button>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      <UserFilter 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        roleFilter={roleFilter}
+        setRoleFilter={setRoleFilter}
+        departmentFilter={departmentFilter}
+        setDepartmentFilter={setDepartmentFilter}
+        departments={departments}
+      />
       
-      {/* Show active filters as badges */}
-      {(roleFilter || departmentFilter) && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">Active filters:</span>
-          
-          {roleFilter && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              Role: {roleFilter}
-              <button 
-                className="ml-1 rounded-full hover:bg-accent p-0.5" 
-                onClick={() => setRoleFilter(null)}
-              >
-                <span className="sr-only">Remove filter</span>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M8 4L4 8M4 4L8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </button>
-            </Badge>
-          )}
-          
-          {departmentFilter && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              Department: {departmentFilter === 'none' ? 'None' : departmentFilter}
-              <button 
-                className="ml-1 rounded-full hover:bg-accent p-0.5" 
-                onClick={() => setDepartmentFilter(null)}
-              >
-                <span className="sr-only">Remove filter</span>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M8 4L4 8M4 4L8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </button>
-            </Badge>
-          )}
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 text-xs" 
-            onClick={resetFilters}
-          >
-            Clear all
-          </Button>
-        </div>
-      )}
+      <UserTable 
+        users={filteredUsers}
+        onEdit={openEditUserDialog}
+        onDelete={confirmDelete}
+      />
       
-      {filteredUsers.length > 0 ? (
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="hidden md:table-cell">Department</TableHead>
-                <TableHead className="hidden lg:table-cell">Added</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="font-medium flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                        {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                        ) : (
-                          user.name.charAt(0)
-                        )}
-                      </span>
-                      {user.name}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell className="hidden md:table-cell">{user.department || '-'}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditUserDialog(user)}
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => confirmDelete(user)}
-                      >
-                        <Trash className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="flex justify-center items-center p-8 border rounded-md">
-          <p className="text-muted-foreground">No users found</p>
-        </div>
-      )}
+      <UserForm
+        open={userDialogOpen}
+        onOpenChange={setUserDialogOpen}
+        editingUser={editingUser}
+        onSubmit={handleSubmit}
+        name={name}
+        setName={setName}
+        email={email}
+        setEmail={setEmail}
+        role={role}
+        setRole={setRole}
+        department={department}
+        handleDepartmentChange={handleDepartmentChange}
+        position={position}
+        setPosition={setPosition}
+        studentId={studentId}
+        setStudentId={setStudentId}
+        resetForm={resetForm}
+        departments={departments}
+      />
       
-      {/* Add/Edit User Dialog */}
-      <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingUser ? 'Edit User' : 'Add New User'}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter full name"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@pupqc.edu.ph"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="faculty">Faculty</SelectItem>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="alumni">Alumni</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select 
-                  value={department !== undefined ? department : 'none'} 
-                  onValueChange={handleDepartmentChange}
-                >
-                  <SelectTrigger id="department">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {(role === 'faculty' || role === 'admin') && (
-              <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  placeholder="e.g. Professor, Director"
-                />
-              </div>
-            )}
-            
-            {role === 'student' && (
-              <div className="space-y-2">
-                <Label htmlFor="studentId">Student ID</Label>
-                <Input
-                  id="studentId"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="e.g. 2023-12345"
-                />
-              </div>
-            )}
-            
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  resetForm();
-                  setUserDialogOpen(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingUser ? 'Update User' : 'Add User'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the user "{userToDelete?.name}".
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteUserDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        userToDelete={userToDelete}
+        onDelete={handleDeleteUser}
+      />
     </div>
   );
 };
