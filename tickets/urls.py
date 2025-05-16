@@ -10,4 +10,5 @@ urlpatterns = [
     path('create/', views.create_ticket, name='create_ticket'),
     path('<int:ticket_id>/update/', views.update_ticket, name='update_ticket'),
     path('attachment/<int:attachment_id>/delete/', views.delete_attachment, name='delete_attachment'),
+    path('<int:ticket_id>/reroute/', views.reroute_ticket, name='reroute_ticket'),
 ]
