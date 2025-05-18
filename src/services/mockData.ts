@@ -57,8 +57,8 @@ export const mockUsers: UserDetails[] = [
   },
   {
     id: '5',
-    name: 'Maria Santos',
-    email: 'msantos@pupqc.edu.ph',
+    name: 'Miguel Bernardo',
+    email: 'miggythegreat@pupqc.edu.ph',
     role: 'faculty',
     department: 'Business Administration',
     position: 'Assistant Professor',
@@ -67,8 +67,8 @@ export const mockUsers: UserDetails[] = [
   },
   {
     id: '6',
-    name: 'Juan Dela Cruz',
-    email: 'jdelacruz@pupqc.edu.ph',
+    name: 'Louraine Mercado',
+    email: 'louraine33@pupqc.edu.ph',
     role: 'student',
     department: 'Engineering',
     studentId: '2021-54321',

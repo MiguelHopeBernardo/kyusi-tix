@@ -64,11 +64,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'kyusitix',
         'USER': 'postgres',
-        'PASSWORD': 'your_password',  # Replace with your actual PostgreSQL password
+        'PASSWORD': 'kanekiken01', 
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
+
+AUTH_USER_MODEL = 'users.CustomUser'
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
