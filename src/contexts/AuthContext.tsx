@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "@/components/ui/sonner";
+import { useNavigate } from 'react-router-dom';
 
 // Define roles
 export type UserRole = 'admin' | 'faculty' | 'student' | 'alumni';
@@ -103,13 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Logout function - Redirect to login page
+  // Fixed logout function - Use React Router for navigation instead of window.location
   const logout = () => {
+    // Remove user from state and local storage
     setUser(null);
     localStorage.removeItem('user');
     toast.success("Logged out successfully");
-    // Force navigation to login page
-    window.location.href = "/login";
+    
+    // We no longer use window.location.href which causes the app to reload
+    // Navigation will be handled by the component using the context
   };
   
   // Forgot password function

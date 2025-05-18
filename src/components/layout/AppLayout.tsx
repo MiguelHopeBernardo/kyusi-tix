@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -87,9 +86,10 @@ const AppLayout = () => {
     }
   };
 
-  // Handle logout
+  // Handle logout with React Router navigation
   const handleLogout = () => {
     logout();
+    navigate('/login');
   };
 
   return (
