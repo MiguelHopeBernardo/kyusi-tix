@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Ticket, Department, UserDetails, TicketStatus, TicketPriority, FileAttachment } from '@/models';
+import { Ticket, Department, UserDetails, TicketStatus, TicketPriority, FileAttachment, TicketComment } from '@/models';
 import { mockTickets, mockDepartments, mockUsers } from '@/services/mockData';
 import { useAuth } from './AuthContext';
 import { toast } from "@/components/ui/sonner";
@@ -11,7 +12,7 @@ interface DataContextType {
   addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>, files?: File[]) => void;
   updateTicket: (id: string, updates: Partial<Ticket>, files?: File[]) => void;
   deleteTicket: (id: string) => void;
-  addTicketComment: (ticketId: string, content: string, isInternal: boolean) => void;
+  addTicketComment: (ticketId: string, content: string, isInternal: boolean, file?: File | null) => void;
   addUser: (user: Omit<UserDetails, 'id' | 'createdAt'>) => void;
   updateUser: (id: string, updates: Partial<UserDetails>) => void;
   deleteUser: (id: string) => void;
@@ -64,6 +65,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         uploadedAt: new Date().toISOString()
       };
     });
+  };
+
+  // Process a single file for a comment
+  const processCommentFile = (file: File | null): FileAttachment | undefined => {
+    if (!file || !user) return undefined;
+    
+    const fileType = file.type as 'image/jpeg' | 'image/png' | 'application/pdf';
+    
+    // Create object URL for preview
+    const fileUrl = URL.createObjectURL(file);
+    
+    return {
+      id: `attachment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ticketId: '',  // Will be set when attached to a ticket
+      filename: file.name,
+      fileType: fileType,
+      fileUrl: fileUrl,
+      fileSize: file.size,
+      uploadedBy: user.id,
+      uploadedAt: new Date().toISOString()
+    };
   };
 
   // Add a new ticket
@@ -148,11 +170,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success("Ticket deleted successfully");
   };
 
-  // Add comment to a ticket
-  const addTicketComment = (ticketId: string, content: string, isInternal: boolean) => {
+  // Add comment to a ticket with optional file attachment
+  const addTicketComment = (ticketId: string, content: string, isInternal: boolean, file?: File | null) => {
     if (!user) return;
     
-    const comment = {
+    // Process the attachment if provided
+    const attachment = file ? processCommentFile(file) : undefined;
+    
+    const comment: TicketComment = {
       id: `comment-${Date.now()}`,
       ticketId,
       userId: user.id,
@@ -162,6 +187,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       content,
       createdAt: new Date().toISOString(),
       isInternal,
+      attachment,  // Add the attachment to the comment
     };
     
     setTickets(prev => 
@@ -311,6 +337,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     return () => {
       tickets.forEach(ticket => {
+        // Clean up ticket attachments
         if (ticket.attachments) {
           ticket.attachments.forEach(attachment => {
             if (attachment.fileUrl) {
@@ -318,6 +345,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             }
           });
         }
+        
+        // Clean up comment attachments
+        ticket.comments.forEach(comment => {
+          if (comment.attachment?.fileUrl) {
+            URL.revokeObjectURL(comment.attachment.fileUrl);
+          }
+        });
       });
     };
   }, []);

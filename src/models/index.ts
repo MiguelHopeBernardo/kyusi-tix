@@ -16,6 +16,7 @@ export interface TicketComment {
   content: string;
   createdAt: string;
   isInternal: boolean; // For staff-only comments
+  attachment?: FileAttachment; // New field for comment attachment
 }
 
 // File attachment interface
