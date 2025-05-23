@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -12,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { getStatusBadge } from '@/components/tickets/TicketStatusBadge';
 import { getPriorityBadge } from '@/components/tickets/TicketPriorityBadge';
-import { Ticket, TicketStatus } from '@/models';
+import { Ticket, TicketStatus, TicketComment } from '@/models';
 import { cn } from '@/lib/utils';
 import FileAttachmentDisplay from '@/components/tickets/FileAttachmentDisplay';
 import { Paperclip, RotateCw } from 'lucide-react';
@@ -30,7 +29,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   ticket,
 }) => {
   const { user } = useAuth();
-  const { updateTicket, addTicketComment, users, assignTicket, deleteAttachment } = useData();
+  const { updateTicket, addTicketComment, users, assignTicket, deleteAttachment, tickets } = useData();
   
   const [comment, setComment] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
@@ -38,22 +37,35 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   const [selectedAssignee, setSelectedAssignee] = useState(ticket?.assignedTo || 'unassigned');
   const [isRouting, setIsRouting] = useState(false);
   const [commentFile, setCommentFile] = useState<File | null>(null);
+  const [currentTicket, setCurrentTicket] = useState<Ticket | null>(ticket);
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const adminsAndFaculty = users.filter(u => u.role === 'admin' || u.role === 'faculty');
+
+  // Keep the current ticket state updated with the latest data from the tickets array
+  useEffect(() => {
+    if (ticket && tickets) {
+      const updatedTicket = tickets.find(t => t.id === ticket.id);
+      if (updatedTicket) {
+        setCurrentTicket(updatedTicket);
+      }
+    } else {
+      setCurrentTicket(null);
+    }
+  }, [ticket, tickets]);
   
   const handleSaveStatus = () => {
-    if (!ticket) return;
-    updateTicket(ticket.id, { status });
+    if (!currentTicket) return;
+    updateTicket(currentTicket.id, { status });
   };
   
   const handleAssign = () => {
-    if (!ticket) return;
+    if (!currentTicket) return;
     
     // If unassigned, clear the assignment
     if (selectedAssignee === 'unassigned') {
-      updateTicket(ticket.id, { 
+      updateTicket(currentTicket.id, { 
         assignedTo: undefined,
         assigneeName: undefined,
         assigneeAvatar: undefined
@@ -61,12 +73,12 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
       return;
     }
     
-    assignTicket(ticket.id, selectedAssignee);
+    assignTicket(currentTicket.id, selectedAssignee);
   };
   
   const handleAddComment = () => {
-    if (!ticket || !comment.trim()) return;
-    addTicketComment(ticket.id, comment, isInternalNote, commentFile);
+    if (!currentTicket || !comment.trim()) return;
+    addTicketComment(currentTicket.id, comment, isInternalNote, commentFile);
     setComment('');
     setCommentFile(null);
   };
@@ -97,12 +109,12 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   };
   
   const handleDeleteAttachment = (attachmentId: string) => {
-    if (!ticket) return;
-    deleteAttachment(ticket.id, attachmentId);
+    if (!currentTicket) return;
+    deleteAttachment(currentTicket.id, attachmentId);
   };
   
   const handleAutoRoute = () => {
-    if (!ticket) return;
+    if (!currentTicket) return;
     setIsRouting(true);
     
     // In a real implementation, this would call the API
@@ -112,8 +124,8 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
       let department: string | undefined = undefined;
       let assigneeId: string | undefined = undefined;
       
-      const descriptionLower = ticket.description.toLowerCase();
-      const titleLower = ticket.title.toLowerCase();
+      const descriptionLower = currentTicket.description.toLowerCase();
+      const titleLower = currentTicket.title.toLowerCase();
       
       // Rule 1: Enrollment-related issues go to Registrar
       if (
@@ -182,7 +194,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
       let updates: any = {};
       let assigneeName = 'No one';
       
-      if (department && department !== ticket.department) {
+      if (department && department !== currentTicket.department) {
         updates.department = department;
       }
       
@@ -198,11 +210,11 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
       }
       
       if (Object.keys(updates).length > 0) {
-        updateTicket(ticket.id, updates);
+        updateTicket(currentTicket.id, updates);
         
         // Add a comment about the auto-routing
         const routingNote = `Ticket was automatically routed to department: ${department || 'None'}, assignee: ${assigneeName}.`;
-        addTicketComment(ticket.id, routingNote, true);
+        addTicketComment(currentTicket.id, routingNote, true);
         
         toast.success("Ticket auto-routed successfully");
         
@@ -225,16 +237,16 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
     }
   }, [ticket]);
   
-  if (!ticket) return null;
+  if (!currentTicket) return null;
   
-  const canManageTicket = user?.role === 'admin' || ticket.assignedTo === user?.id;
+  const canManageTicket = user?.role === 'admin' || currentTicket.assignedTo === user?.id;
   const canAddFileToComment = user?.role === 'admin' || user?.role === 'faculty';
   
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg overflow-y-auto">
         <SheetHeader className="pb-4">
-          <SheetTitle className="text-xl">{ticket.title}</SheetTitle>
+          <SheetTitle className="text-xl">{currentTicket.title}</SheetTitle>
         </SheetHeader>
         
         <div className="space-y-6">
@@ -242,62 +254,62 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
           <div className="space-y-2">
             <div className="flex justify-between">
               <div className="space-x-2">
-                {getStatusBadge(ticket.status)}
-                {getPriorityBadge(ticket.priority)}
+                {getStatusBadge(currentTicket.status)}
+                {getPriorityBadge(currentTicket.priority)}
               </div>
               <div className="text-sm text-muted-foreground">
-                Ticket #{ticket.id.split('-')[1]}
+                Ticket #{currentTicket.id.split('-')[1]}
               </div>
             </div>
             
             <div className="pt-2 space-y-1">
               <div className="flex items-center space-x-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={ticket.creatorAvatar} />
-                  <AvatarFallback>{ticket.creatorName.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={currentTicket.creatorAvatar} />
+                  <AvatarFallback>{currentTicket.creatorName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <span className="text-sm">
-                  Created by <strong>{ticket.creatorName}</strong> ({ticket.creatorRole})
+                  Created by <strong>{currentTicket.creatorName}</strong> ({currentTicket.creatorRole})
                 </span>
               </div>
               
-              {ticket.assigneeName && (
+              {currentTicket.assigneeName && (
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={ticket.assigneeAvatar} />
-                    <AvatarFallback>{ticket.assigneeName.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={currentTicket.assigneeAvatar} />
+                    <AvatarFallback>{currentTicket.assigneeName.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span className="text-sm">
-                    Assigned to <strong>{ticket.assigneeName}</strong>
+                    Assigned to <strong>{currentTicket.assigneeName}</strong>
                   </span>
                 </div>
               )}
               
-              {ticket.department && (
+              {currentTicket.department && (
                 <div className="text-sm">
-                  Department: <strong>{ticket.department}</strong>
+                  Department: <strong>{currentTicket.department}</strong>
                 </div>
               )}
               
               <div className="text-sm text-muted-foreground">
-                Created: {new Date(ticket.createdAt).toLocaleString()}
+                Created: {new Date(currentTicket.createdAt).toLocaleString()}
               </div>
-              {ticket.updatedAt !== ticket.createdAt && (
+              {currentTicket.updatedAt !== currentTicket.createdAt && (
                 <div className="text-sm text-muted-foreground">
-                  Last updated: {new Date(ticket.updatedAt).toLocaleString()}
+                  Last updated: {new Date(currentTicket.updatedAt).toLocaleString()}
                 </div>
               )}
             </div>
             
             <div className="mt-4 p-3 border rounded-md bg-muted/50">
-              <p className="whitespace-pre-wrap">{ticket.description}</p>
+              <p className="whitespace-pre-wrap">{currentTicket.description}</p>
             </div>
             
             {/* Display attachments if any */}
-            {ticket.attachments && ticket.attachments.length > 0 && (
+            {currentTicket.attachments && currentTicket.attachments.length > 0 && (
               <FileAttachmentDisplay 
-                attachments={ticket.attachments} 
-                canDelete={canManageTicket || ticket.createdBy === user?.id} 
+                attachments={currentTicket.attachments} 
+                canDelete={canManageTicket || currentTicket.createdBy === user?.id} 
                 onDelete={handleDeleteAttachment}
               />
             )}
@@ -347,7 +359,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
                     size="sm" 
                     className="w-full mt-1"
                     onClick={handleSaveStatus}
-                    disabled={status === ticket.status}
+                    disabled={status === currentTicket.status}
                   >
                     Save Status
                   </Button>
@@ -375,7 +387,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
                     size="sm" 
                     className="w-full mt-1"
                     onClick={handleAssign}
-                    disabled={selectedAssignee === ticket.assignedTo || (selectedAssignee === 'unassigned' && !ticket.assignedTo)}
+                    disabled={selectedAssignee === currentTicket.assignedTo || (selectedAssignee === 'unassigned' && !currentTicket.assignedTo)}
                   >
                     Assign
                   </Button>
@@ -391,11 +403,11 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
             <h3 className="font-medium">Comments</h3>
             
             <div className="space-y-4">
-              {ticket.comments.length === 0 ? (
+              {currentTicket.comments.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">No comments yet</p>
               ) : (
                 <div className="space-y-4">
-                  {ticket.comments.map(comment => {
+                  {currentTicket.comments.map(comment => {
                     const isStaffComment = comment.userRole === 'admin' || comment.userRole === 'faculty';
                     
                     // Don't show internal notes to non-staff
