@@ -6,22 +6,60 @@ from .forms import TicketForm, TicketUpdateForm, TicketCommentForm
 from .routing import TicketRouter
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.utils.html import escape
 
 @login_required
 def ticket_list(request):
-    # ... keep existing code
+    tickets = Ticket.objects.all()
+    return render(request, 'tickets/ticket_list.html', {'tickets': tickets})
     
 @login_required
 def ticket_detail(request, ticket_id):
-    # ... keep existing code
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    comments = ticket.comments.all()
+    
+    if request.method == 'POST':
+        comment_form = TicketCommentForm(request.POST)
+        if comment_form.is_valid():
+            # Sanitize content to prevent XSS
+            content = escape(comment_form.cleaned_data['content'])
+            
+            comment = comment_form.save(commit=False)
+            comment.ticket = ticket
+            comment.author = request.user
+            comment.content = content  # Use sanitized content
+            comment.save()
+            
+            # Set ticket status to in_progress if it's currently open
+            if ticket.status == 'open':
+                ticket.status = 'in_progress'
+                ticket.save()
+                messages.info(request, "Ticket status updated to 'In Progress'")
+            
+            messages.success(request, 'Comment added successfully.')
+            return redirect('tickets:ticket_detail', ticket_id=ticket.id)
+    else:
+        comment_form = TicketCommentForm()
+    
+    return render(request, 'tickets/ticket_detail.html', {
+        'ticket': ticket,
+        'comments': comments,
+        'comment_form': comment_form
+    })
 
 @login_required
 def create_ticket(request):
     if request.method == 'POST':
         form = TicketForm(request.POST)
         if form.is_valid():
+            # Sanitize input to prevent XSS
+            subject = escape(form.cleaned_data['subject'])
+            description = escape(form.cleaned_data['description'])
+            
             ticket = form.save(commit=False)
             ticket.created_by = request.user
+            ticket.subject = subject
+            ticket.description = description
             
             # Auto-assign using the ticket router
             if not request.user.is_staff:  # Staff can override assignments
@@ -154,7 +192,17 @@ def update_ticket(request, ticket_id):
 
 @login_required
 def delete_attachment(request, attachment_id):
-    # ... keep existing code
+    attachment = get_object_or_404(TicketAttachment, id=attachment_id)
+    
+    # Check if user has permission to delete this attachment
+    if not request.user.is_staff and request.user != attachment.uploaded_by:
+        messages.error(request, "You don't have permission to delete this attachment")
+        return redirect('tickets:ticket_detail', ticket_id=attachment.ticket.id)
+    
+    ticket_id = attachment.ticket.id
+    attachment.delete()
+    messages.success(request, 'Attachment deleted successfully!')
+    return redirect('tickets:ticket_detail', ticket_id=ticket_id)
 
 @login_required
 @require_POST

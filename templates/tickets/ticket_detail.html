@@ -154,9 +154,9 @@
                         <p class="text-muted mb-4">No comments yet.</p>
                     {% endif %}
                     
-                    <!-- Comment Form -->
+                    <!-- Comment Form with instant update -->
                     <div class="mt-4">
-                        <form method="post">
+                        <form method="post" id="comment-form">
                             {% csrf_token %}
                             {{ comment_form|crispy }}
                             <button type="submit" class="btn btn-primary mt-2">Add Comment</button>
@@ -176,7 +176,7 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span class="fw-bold">Status:</span>
-                            <span class="badge {% if ticket.status == 'open' %}bg-danger{% elif ticket.status == 'in_progress' %}bg-warning{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                            <span id="ticket-status-badge" class="badge {% if ticket.status == 'open' %}bg-danger{% elif ticket.status == 'in_progress' %}bg-warning{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
                                 {{ ticket.get_status_display }}
                             </span>
                         </li>
@@ -242,4 +242,24 @@
         </div>
     </div>
 </div>
+
+<script>
+// Script to handle instant status update when comment is submitted
+document.addEventListener('DOMContentLoaded', function() {
+    const commentForm = document.getElementById('comment-form');
+    const statusBadge = document.getElementById('ticket-status-badge');
+    
+    if (commentForm && statusBadge) {
+        commentForm.addEventListener('submit', function() {
+            // Check if status is currently "open"
+            if (statusBadge.textContent.trim() === "Open") {
+                // Update status badge to "In Progress" immediately
+                statusBadge.textContent = "In Progress";
+                statusBadge.classList.remove('bg-danger');
+                statusBadge.classList.add('bg-warning');
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

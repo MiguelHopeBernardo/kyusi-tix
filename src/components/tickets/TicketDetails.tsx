@@ -78,7 +78,23 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   
   const handleAddComment = () => {
     if (!currentTicket || !comment.trim()) return;
-    addTicketComment(currentTicket.id, comment, isInternalNote, commentFile);
+    
+    // Sanitize the comment to prevent XSS
+    const sanitizedComment = comment.trim()
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    
+    // Add the comment
+    addTicketComment(currentTicket.id, sanitizedComment, isInternalNote, commentFile);
+    
+    // Auto-update ticket to in_progress status when new comment is added
+    if (currentTicket.status === 'open') {
+      updateTicket(currentTicket.id, { status: 'in_progress' });
+      // Update the local status state as well
+      setStatus('in_progress');
+    }
+    
     setComment('');
     setCommentFile(null);
   };
