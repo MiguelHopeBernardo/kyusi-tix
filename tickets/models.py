@@ -6,6 +6,7 @@ class Ticket(models.Model):
     STATUS_CHOICES = [
         ('open', 'Open'),
         ('in_progress', 'In Progress'),
+        ('on_hold', 'On Hold'),
         ('resolved', 'Resolved'),
         ('closed', 'Closed'),
     ]
@@ -48,6 +49,7 @@ class TicketComment(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_internal = models.BooleanField(default=False, help_text="Internal notes visible only to staff")
     
     class Meta:
         ordering = ['created_at']

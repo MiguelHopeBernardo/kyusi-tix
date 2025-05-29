@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Ticket, TicketStatus, User } from '@/models';
+import { Ticket, TicketStatus, UserDetails } from '@/models';
 import { RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +13,7 @@ interface TicketManagementProps {
   setStatus: (status: TicketStatus) => void;
   selectedAssignee: string;
   setSelectedAssignee: (assignee: string) => void;
-  adminsAndFaculty: User[];
+  adminsAndFaculty: UserDetails[];
   isRouting: boolean;
   userRole?: string;
   onSaveStatus: () => void;

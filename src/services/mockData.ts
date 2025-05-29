@@ -1,230 +1,274 @@
-import { 
-  Ticket, 
-  Department, 
-  UserDetails, 
-  TicketStatus, 
-  TicketPriority, 
-  TicketComment 
-} from '@/models';
 
-// Generate random date within the last 30 days
-const randomDate = () => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 30);
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString();
-};
+import { Ticket, Department, UserDetails, TicketStatus, TicketPriority } from '@/models';
 
-// Mock users data
+// Updated departments with the requested ones
+export const mockDepartments: Department[] = [
+  {
+    id: 'dept-1',
+    name: 'Academic Affairs',
+    description: 'Handles academic policies, curriculum, and student academic records',
+    head: 'Dr. Maria Santos',
+    members: 15,
+    createdAt: '2024-01-15T08:00:00Z',
+  },
+  {
+    id: 'dept-2',
+    name: 'Registrar',
+    description: 'Manages student enrollment, transcripts, and academic records',
+    head: 'Prof. John Rodriguez',
+    members: 8,
+    createdAt: '2024-01-15T08:00:00Z',
+  },
+  {
+    id: 'dept-3',
+    name: 'IT',
+    description: 'Information Technology support and infrastructure management',
+    head: 'Mr. Carlos Tech',
+    members: 12,
+    createdAt: '2024-01-15T08:00:00Z',
+  },
+  {
+    id: 'dept-4',
+    name: 'Finance (Accounting)',
+    description: 'Financial management, accounting, and student billing',
+    head: 'Ms. Ana Finance',
+    members: 10,
+    createdAt: '2024-01-15T08:00:00Z',
+  },
+  {
+    id: 'dept-5',
+    name: 'Alumni Affairs',
+    description: 'Alumni relations and engagement programs',
+    head: 'Mr. Robert Alumni',
+    members: 5,
+    createdAt: '2024-01-15T08:00:00Z',
+  },
+  {
+    id: 'dept-6',
+    name: 'Student Affairs (OSAS)',
+    description: 'Office of Student Affairs and Services',
+    head: 'Dr. Lisa Student',
+    members: 20,
+    createdAt: '2024-01-15T08:00:00Z',
+  },
+];
+
+// Updated users with the new departments
 export const mockUsers: UserDetails[] = [
   {
-    id: '1',
+    id: 'user-1',
     name: 'Admin User',
     email: 'admin@pupqc.edu.ph',
     role: 'admin',
+    department: 'IT',
     position: 'System Administrator',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
-    createdAt: randomDate(),
+    createdAt: '2024-01-01T00:00:00Z',
   },
   {
-    id: '2',
-    name: 'Faculty Member',
-    email: 'faculty@pupqc.edu.ph',
+    id: 'user-2',
+    name: 'Dr. Maria Santos',
+    email: 'maria.santos@pupqc.edu.ph',
     role: 'faculty',
-    department: 'Computer Science',
-    position: 'Professor',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=faculty',
-    createdAt: randomDate(),
-  },
-  {
-    id: '3',
-    name: 'Student User',
-    email: 'student@pupqc.edu.ph',
-    role: 'student',
-    department: 'Computer Science',
-    studentId: '2020-12345',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=student',
-    createdAt: randomDate(),
-  },
-  {
-    id: '4',
-    name: 'Alumni User',
-    email: 'alumni@pupqc.edu.ph',
-    role: 'alumni',
-    department: 'Information Technology',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alumni',
-    createdAt: randomDate(),
-  },
-  {
-    id: '5',
-    name: 'Miguel Bernardo',
-    email: 'miggythegreat@pupqc.edu.ph',
-    role: 'faculty',
-    department: 'Business Administration',
-    position: 'Assistant Professor',
+    department: 'Academic Affairs',
+    position: 'Department Head',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=maria',
-    createdAt: randomDate(),
+    createdAt: '2024-01-02T00:00:00Z',
   },
   {
-    id: '6',
-    name: 'Louraine Mercado',
-    email: 'louraine33@pupqc.edu.ph',
+    id: 'user-3',
+    name: 'Prof. John Rodriguez',
+    email: 'john.rodriguez@pupqc.edu.ph',
+    role: 'faculty',
+    department: 'Registrar',
+    position: 'Registrar Head',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
+    createdAt: '2024-01-03T00:00:00Z',
+  },
+  {
+    id: 'user-4',
+    name: 'Mr. Carlos Tech',
+    email: 'carlos.tech@pupqc.edu.ph',
+    role: 'faculty',
+    department: 'IT',
+    position: 'IT Director',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=carlos',
+    createdAt: '2024-01-04T00:00:00Z',
+  },
+  {
+    id: 'user-5',
+    name: 'Ms. Ana Finance',
+    email: 'ana.finance@pupqc.edu.ph',
+    role: 'faculty',
+    department: 'Finance (Accounting)',
+    position: 'Finance Manager',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ana',
+    createdAt: '2024-01-05T00:00:00Z',
+  },
+  {
+    id: 'user-6',
+    name: 'Mr. Robert Alumni',
+    email: 'robert.alumni@pupqc.edu.ph',
+    role: 'faculty',
+    department: 'Alumni Affairs',
+    position: 'Alumni Relations Director',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=robert',
+    createdAt: '2024-01-06T00:00:00Z',
+  },
+  {
+    id: 'user-7',
+    name: 'Dr. Lisa Student',
+    email: 'lisa.student@pupqc.edu.ph',
+    role: 'faculty',
+    department: 'Student Affairs (OSAS)',
+    position: 'OSAS Director',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lisa',
+    createdAt: '2024-01-07T00:00:00Z',
+  },
+  {
+    id: 'user-8',
+    name: 'Juan Dela Cruz',
+    email: 'juan.delacruz@pupqc.edu.ph',
     role: 'student',
-    department: 'Engineering',
-    studentId: '2021-54321',
+    department: 'Computer Science',
+    studentId: '2024-00001',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=juan',
-    createdAt: randomDate(),
+    createdAt: '2024-01-08T00:00:00Z',
+  },
+  {
+    id: 'user-9',
+    name: 'Maria Clara',
+    email: 'maria.clara@pupqc.edu.ph',
+    role: 'student',
+    department: 'Information Technology',
+    studentId: '2024-00002',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mariaclara',
+    createdAt: '2024-01-09T00:00:00Z',
+  },
+  {
+    id: 'user-10',
+    name: 'Jose Rizal Alumni',
+    email: 'jose.rizal@gmail.com',
+    role: 'alumni',
+    department: 'Computer Science',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jose',
+    createdAt: '2024-01-10T00:00:00Z',
   },
 ];
 
-// Mock departments data
-export const mockDepartments: Department[] = [
+// Sample tickets with updated departments
+export const mockTickets: Ticket[] = [
   {
-    id: '1',
-    name: 'Computer Science',
-    description: 'Department of Computer Science',
-    head: 'Dr. Computer Science Head',
-    members: 15,
-    createdAt: randomDate(),
+    id: 'ticket-1',
+    title: 'Unable to access student portal',
+    description: 'I am having trouble logging into the student portal. The system shows an error message "Invalid credentials" even though I am using the correct username and password.',
+    status: 'open' as TicketStatus,
+    priority: 'high' as TicketPriority,
+    createdBy: 'user-8',
+    creatorName: 'Juan Dela Cruz',
+    creatorRole: 'student',
+    creatorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=juan',
+    department: 'IT',
+    createdAt: '2024-12-01T10:30:00Z',
+    updatedAt: '2024-12-01T10:30:00Z',
+    comments: [],
+    attachments: [],
   },
   {
-    id: '2',
-    name: 'Information Technology',
-    description: 'Department of Information Technology',
-    head: 'Dr. IT Head',
-    members: 18,
-    createdAt: randomDate(),
+    id: 'ticket-2',
+    title: 'Grade discrepancy in Mathematics course',
+    description: 'There seems to be an error in my final grade for Mathematics 101. The computed grade does not match my individual scores.',
+    status: 'in_progress' as TicketStatus,
+    priority: 'medium' as TicketPriority,
+    createdBy: 'user-9',
+    creatorName: 'Maria Clara',
+    creatorRole: 'student',
+    creatorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mariaclara',
+    assignedTo: 'user-2',
+    assigneeName: 'Dr. Maria Santos',
+    assigneeAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=maria',
+    department: 'Academic Affairs',
+    createdAt: '2024-11-28T14:15:00Z',
+    updatedAt: '2024-11-29T09:20:00Z',
+    comments: [
+      {
+        id: 'comment-1',
+        ticketId: 'ticket-2',
+        userId: 'user-2',
+        userName: 'Dr. Maria Santos',
+        userRole: 'faculty',
+        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=maria',
+        content: 'I have reviewed your case and will coordinate with the instructor to verify the grade computation.',
+        createdAt: '2024-11-29T09:20:00Z',
+        isInternal: false,
+      },
+    ],
+    attachments: [],
   },
   {
-    id: '3',
-    name: 'Business Administration',
-    description: 'College of Business Administration',
-    head: 'Dr. Business Admin Head',
-    members: 20,
-    createdAt: randomDate(),
+    id: 'ticket-3',
+    title: 'Request for enrollment certificate',
+    description: 'I need an official enrollment certificate for scholarship application. Please provide the document with the official seal.',
+    status: 'resolved' as TicketStatus,
+    priority: 'low' as TicketPriority,
+    createdBy: 'user-8',
+    creatorName: 'Juan Dela Cruz',
+    creatorRole: 'student',
+    creatorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=juan',
+    assignedTo: 'user-3',
+    assigneeName: 'Prof. John Rodriguez',
+    assigneeAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
+    department: 'Registrar',
+    createdAt: '2024-11-25T11:00:00Z',
+    updatedAt: '2024-11-27T16:30:00Z',
+    comments: [
+      {
+        id: 'comment-2',
+        ticketId: 'ticket-3',
+        userId: 'user-3',
+        userName: 'Prof. John Rodriguez',
+        userRole: 'faculty',
+        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
+        content: 'Your enrollment certificate is ready for pickup at the Registrar office.',
+        createdAt: '2024-11-27T16:30:00Z',
+        isInternal: false,
+      },
+    ],
+    attachments: [],
   },
   {
-    id: '4',
-    name: 'Engineering',
-    description: 'College of Engineering',
-    head: 'Dr. Engineering Head',
-    members: 25,
-    createdAt: randomDate(),
+    id: 'ticket-4',
+    title: 'Tuition fee payment inquiry',
+    description: 'I have paid my tuition fees online but the payment is not reflecting in my student account. Please check the payment status.',
+    status: 'open' as TicketStatus,
+    priority: 'urgent' as TicketPriority,
+    createdBy: 'user-9',
+    creatorName: 'Maria Clara',
+    creatorRole: 'student',
+    creatorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mariaclara',
+    department: 'Finance (Accounting)',
+    createdAt: '2024-12-02T08:45:00Z',
+    updatedAt: '2024-12-02T08:45:00Z',
+    comments: [],
+    attachments: [],
   },
   {
-    id: '5',
-    name: 'Arts and Sciences',
-    description: 'College of Arts and Sciences',
-    head: 'Dr. Arts Head',
-    members: 30,
-    createdAt: randomDate(),
+    id: 'ticket-5',
+    title: 'Alumni database update request',
+    description: 'I would like to update my contact information in the alumni database. My current address and phone number have changed.',
+    status: 'in_progress' as TicketStatus,
+    priority: 'low' as TicketPriority,
+    createdBy: 'user-10',
+    creatorName: 'Jose Rizal Alumni',
+    creatorRole: 'alumni',
+    creatorAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jose',
+    assignedTo: 'user-6',
+    assigneeName: 'Mr. Robert Alumni',
+    assigneeAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=robert',
+    department: 'Alumni Affairs',
+    createdAt: '2024-11-30T13:20:00Z',
+    updatedAt: '2024-12-01T10:15:00Z',
+    comments: [],
+    attachments: [],
   },
 ];
-
-// Generate mock comments
-const generateComments = (ticketId: string, count: number): TicketComment[] => {
-  const comments = [];
-  for (let i = 0; i < count; i++) {
-    const user = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-    comments.push({
-      id: `comment-${ticketId}-${i}`,
-      ticketId,
-      userId: user.id,
-      userName: user.name,
-      userRole: user.role,
-      userAvatar: user.avatar,
-      content: `This is a sample comment ${i + 1} on ticket ${ticketId}. ${
-        Math.random() > 0.5
-          ? 'We are working on resolving this issue as soon as possible.'
-          : 'Could you provide more information about this issue?'
-      }`,
-      createdAt: randomDate(),
-      isInternal: Math.random() > 0.7, // 30% chance of being internal
-    });
-  }
-  return comments.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-};
-
-// Generate mock tickets
-export const generateMockTickets = (count: number): Ticket[] => {
-  const ticketTitles = [
-    'Unable to access student portal',
-    'Registration system error',
-    'Library access card not working',
-    'Cannot view grades online',
-    'Issue with course enrollment',
-    'Problem with student email',
-    'WiFi connectivity issues in Building A',
-    'Computer lab software error',
-    'ID verification problem',
-    'Payment portal not accepting transactions',
-    'Course materials not available',
-    'Account login issues',
-  ];
-  
-  const ticketDescriptions = [
-    'I am unable to log in to the student portal using my credentials. The system shows an error message.',
-    'The registration system crashed while I was selecting courses for the next semester.',
-    'My library access card is not being recognized by the scanner at the entrance.',
-    'When I try to view my grades for the previous semester, the page shows an error.',
-    'I am unable to enroll in the required courses for my program.',
-    'My student email account is not receiving any messages for the past two days.',
-    'The WiFi connection in Building A is very slow and frequently disconnects.',
-    'The software in Computer Lab 3 is not functioning correctly for my project work.',
-    'The system is not recognizing my student ID for verification purposes.',
-    'I am trying to pay my tuition fee but the payment portal keeps rejecting my transaction.',
-    'The course materials for CS101 are not available on the learning platform.',
-    'I keep getting locked out of my account after multiple login attempts.',
-  ];
-  
-  const statuses: TicketStatus[] = ['open', 'in_progress', 'on_hold', 'resolved', 'closed'];
-  const priorities: TicketPriority[] = ['low', 'medium', 'high', 'urgent'];
-  
-  const tickets = [];
-  for (let i = 0; i < count; i++) {
-    const titleIndex = Math.floor(Math.random() * ticketTitles.length);
-    const creator = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-    
-    // Sometimes assign tickets, sometimes leave unassigned
-    let assignedTo, assigneeName, assigneeAvatar;
-    if (Math.random() > 0.3) { // 70% chance of being assigned
-      const assignee = mockUsers.filter(u => u.role === 'admin' || u.role === 'faculty')[
-        Math.floor(Math.random() * Math.min(2, mockUsers.length))
-      ];
-      assignedTo = assignee.id;
-      assigneeName = assignee.name;
-      assigneeAvatar = assignee.avatar;
-    }
-    
-    const createdAt = randomDate();
-    const updatedAt = new Date(new Date(createdAt).getTime() + Math.random() * 86400000).toISOString();
-    
-    const ticket: Ticket = {
-      id: `ticket-${i + 1}`,
-      title: ticketTitles[titleIndex],
-      description: ticketDescriptions[titleIndex],
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      priority: priorities[Math.floor(Math.random() * priorities.length)],
-      createdBy: creator.id,
-      creatorName: creator.name,
-      creatorAvatar: creator.avatar,
-      creatorRole: creator.role,
-      assignedTo,
-      assigneeName,
-      assigneeAvatar,
-      department: Math.random() > 0.5 ? mockDepartments[Math.floor(Math.random() * mockDepartments.length)].name : undefined,
-      createdAt,
-      updatedAt,
-      comments: generateComments(`ticket-${i + 1}`, Math.floor(Math.random() * 5)),
-    };
-    
-    tickets.push(ticket);
-  }
-  
-  return tickets;
-};
-
-// Export mock tickets
-export const mockTickets = generateMockTickets(30);

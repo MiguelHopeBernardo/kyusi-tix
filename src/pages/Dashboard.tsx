@@ -12,19 +12,15 @@ import TicketTable from '@/components/tickets/TicketTable';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Ticket, TicketStatus } from '@/models';
-import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { tickets } = useData();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [statusData, setStatusData] = useState<{ name: string, value: number, color: string }[]>([]);
   const [openCount, setOpenCount] = useState(0);
   const [urgentCount, setUrgentCount] = useState(0);
   const [resolvedTodayCount, setResolvedTodayCount] = useState(0);
   const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
-  const [myTickets, setMyTickets] = useState<Ticket[]>([]);
-  const [assignedTickets, setAssignedTickets] = useState<Ticket[]>([]);
   
   // Colors for pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -72,19 +68,12 @@ const Dashboard = () => {
         updatedAt >= today;
     }).length);
     
-    // Get recent tickets sorted by priority
+    // Get recent tickets sorted by creation date (most recent first)
     const sortedTickets = [...userTickets].sort((a, b) => {
-      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     
     setRecentTickets(sortedTickets.slice(0, 5));
-    
-    // Set my tickets
-    setMyTickets(tickets.filter(ticket => ticket.createdBy === user?.id));
-    
-    // Set assigned tickets
-    setAssignedTickets(tickets.filter(ticket => ticket.assignedTo === user?.id));
     
   }, [tickets, user]);
   
@@ -100,9 +89,6 @@ const Dashboard = () => {
     return null; // Safety check
   }
 
-  // For non-admin users, redirect is handled in AppLayout's useEffect
-  // Don't return early here to avoid hook issues
-  
   // Admin Dashboard
   return (
     <div className="p-6 space-y-6 w-full">
@@ -191,7 +177,7 @@ const Dashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle>Recent Tickets</CardTitle>
-              <CardDescription>Sorted by priority</CardDescription>
+              <CardDescription>Latest tickets created in the system</CardDescription>
             </CardHeader>
             <CardContent>
               <TicketTable 
