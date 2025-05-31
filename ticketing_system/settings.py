@@ -40,16 +40,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# CORS settings - Updated to include the current Lovable app URL
+# CORS settings - More permissive for development
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",
     "https://27ef5806-eb5b-416b-8c67-813a42467d66.lovableproject.com",
-    "https://id-preview--27ef5806-eb5b-416b-8c67-813a42467d66.lovable.app",  # Add the current Lovable app URL
+    "https://id-preview--27ef5806-eb5b-416b-8c67-813a42467d66.lovable.app",
 ]
 
+# Allow all origins for development - REMOVE IN PRODUCTION
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False  # Set to True only for development if needed
 
 # Allow specific headers
 CORS_ALLOW_HEADERS = [
@@ -77,7 +79,7 @@ CORS_ALLOW_METHODS = [
 
 ROOT_URLCONF = 'ticketing_system.urls'
 
-# ... keep existing code (TEMPLATES, WSGI_APPLICATION, DATABASES, AUTH_USER_MODEL sections)
+# ... keep existing code (TEMPLATES, WSGI_APPLICATION sections)
 
 TEMPLATES = [
     {
@@ -97,14 +99,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ticketing_system.wsgi.application'
 
-# Database
-# Update these settings with your database credentials
+# Database - Updated with new credentials
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'kyusitix',
-        'USER': 'kyusitixuser',  # Change this to your database user
-        'PASSWORD': 'your_secure_password',  # Change this to your database password
+        'NAME': 'qctix',
+        'USER': 'postgres',
+        'PASSWORD': 'kanekiken01',
         'HOST': 'localhost',
         'PORT': '5432',
     }

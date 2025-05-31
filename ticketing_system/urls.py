@@ -11,26 +11,35 @@ from users import views as user_views
 @csrf_exempt
 def health_check(request):
     """Simple health check endpoint with proper CORS handling"""
+    print(f"Health check request from: {request.META.get('HTTP_ORIGIN', 'Unknown')}")
+    print(f"Request method: {request.method}")
+    print(f"Request headers: {dict(request.headers)}")
     
     # Handle preflight OPTIONS request
     if request.method == 'OPTIONS':
         response = JsonResponse({'status': 'ok'})
-        response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
+        response['Access-Control-Allow-Origin'] = '*'
         response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type, Accept, Authorization, X-CSRFToken'
         response['Access-Control-Allow-Credentials'] = 'true'
         response['Access-Control-Max-Age'] = '86400'
+        print("Responding to OPTIONS request")
         return response
     
     # Handle actual request
     response = JsonResponse({
         'status': 'ok', 
         'message': 'Django server is running',
-        'cors_configured': True
+        'cors_configured': True,
+        'timestamp': str(timezone.now())
     })
-    response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
+    response['Access-Control-Allow-Origin'] = '*'
     response['Access-Control-Allow-Credentials'] = 'true'
+    print("Responding to health check")
     return response
+
+# Import timezone for the health check
+from django.utils import timezone
 
 urlpatterns = [
     path('admin/', admin.site.urls),
