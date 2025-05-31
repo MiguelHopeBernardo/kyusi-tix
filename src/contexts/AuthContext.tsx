@@ -38,6 +38,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
+      console.log('Checking auth status...');
+      
+      // First, let's test if the Django server is reachable
+      const healthResponse = await fetch('http://127.0.0.1:8000/health/', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Health check response:', healthResponse.status);
+      
+      if (!healthResponse.ok) {
+        console.log('Django server health check failed');
+        throw new Error('Django server not accessible');
+      }
+      
       // Check if user is authenticated by making a request to get current user info
       const response = await fetch('http://127.0.0.1:8000/users/profile/', {
         credentials: 'include',
@@ -47,8 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
       
+      console.log('Profile response status:', response.status);
+      
       if (response.ok) {
         const userData = await response.json();
+        console.log('User data received:', userData);
         setUser({
           id: userData.id,
           name: userData.first_name + ' ' + userData.last_name,
@@ -58,9 +80,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           department: userData.department,
           avatar: userData.profile_image,
         });
+      } else if (response.status === 403 || response.status === 401) {
+        console.log('User not authenticated');
+      } else {
+        console.log('Unexpected response status:', response.status);
       }
     } catch (error) {
-      console.log('User not authenticated:', error);
+      console.log('Auth check failed:', error);
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        toast.error("Cannot connect to Django server. Please make sure it's running on http://127.0.0.1:8000");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
+      console.log('Attempting login for:', username);
+      
       // Make login request to Django with JSON
       const response = await fetch('http://127.0.0.1:8000/login/', {
         method: 'POST',
@@ -85,7 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
       });
       
+      console.log('Login response status:', response.status);
+      
       const data = await response.json();
+      console.log('Login response data:', data);
       
       if (response.ok && data.success) {
         // Set user data from response
@@ -102,13 +137,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
         return true;
       } else {
+        console.log('Login failed:', data.error);
         toast.error(data.error || "Invalid credentials");
         setIsLoading(false);
         return false;
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error("Login failed - please check if the Django server is running");
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        toast.error("Cannot connect to Django server. Please make sure it's running on http://127.0.0.1:8000");
+      } else {
+        toast.error("Login failed - unexpected error");
+      }
       setIsLoading(false);
       return false;
     }

@@ -5,10 +5,19 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 from users import views as user_views
+
+def health_check(request):
+    """Simple health check endpoint"""
+    response = JsonResponse({'status': 'ok', 'message': 'Django server is running'})
+    response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '')
+    response['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health_check, name='health_check'),  # Add health check
     path('', RedirectView.as_view(url='login/', permanent=False)),  # Redirect root to login
     path('login/', csrf_exempt(user_views.login_view), name='login'),  # Custom login view with CSRF exemption for API
     path('logout/', csrf_exempt(user_views.logout_view), name='logout'),
