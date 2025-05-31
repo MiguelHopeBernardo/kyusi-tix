@@ -5,6 +5,22 @@ export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
 // Ticket statuses
 export type TicketStatus = 'open' | 'in_progress' | 'on_hold' | 'resolved' | 'closed';
 
+// User roles
+export type UserRole = 'admin' | 'faculty' | 'student';
+
+// User interface
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department?: string;
+  position?: string;
+  studentId?: string;
+  avatar?: string;
+  createdAt?: string;
+}
+
 // Comment interface
 export interface TicketComment {
   id: string;

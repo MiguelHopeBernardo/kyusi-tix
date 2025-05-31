@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Ticket, TicketComment, TicketPriority, TicketStatus, Department } from '@/models';
@@ -8,9 +9,9 @@ interface DataContextType {
   tickets: Ticket[];
   departments: Department[];
   addUser: (user: Omit<User, 'id' | 'avatar'>) => void;
-  addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>) => void;
-  addTicketComment: (ticketId: string, content: string, isInternal: boolean, file: File | null) => void;
-  updateTicket: (id: string, updates: Partial<Ticket>) => void;
+  addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments' | 'attachments'>, files?: File[]) => void;
+  addTicketComment: (ticketId: string, content: string, isInternal: boolean, file?: File | null) => void;
+  updateTicket: (id: string, updates: Partial<Ticket>, files?: File[]) => void;
   deleteTicket: (id: string) => void;
   deleteAttachment: (ticketId: string, attachmentId: string) => void;
   assignTicket: (ticketId: string, assigneeId: string) => void;
@@ -19,6 +20,10 @@ interface DataContextType {
   addDepartment: (department: Omit<Department, 'id'>) => void;
   updateDepartment: (id: string, updates: Partial<Department>) => void;
   deleteDepartment: (id: string) => void;
+  getMyTickets: () => Ticket[];
+  getAssignedToMeTickets: () => Ticket[];
+  getOpenTickets: () => Ticket[];
+  getClosedTickets: () => Ticket[];
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -55,11 +60,11 @@ const initialUsers: User[] = [
 ];
 
 const initialDepartments: Department[] = [
-  { id: generateId(), name: 'IT' },
-  { id: generateId(), name: 'Registrar' },
-  { id: generateId(), name: 'Finance' },
-  { id: generateId(), name: 'Student Services' },
-  { id: generateId(), name: 'Academic Affairs' },
+  { id: generateId(), name: 'IT', description: 'Information Technology', createdAt: new Date().toISOString() },
+  { id: generateId(), name: 'Registrar', description: 'Student Registration', createdAt: new Date().toISOString() },
+  { id: generateId(), name: 'Finance', description: 'Financial Affairs', createdAt: new Date().toISOString() },
+  { id: generateId(), name: 'Student Services', description: 'Student Support', createdAt: new Date().toISOString() },
+  { id: generateId(), name: 'Academic Affairs', description: 'Academic Management', createdAt: new Date().toISOString() },
 ];
 
 const initialTickets: Ticket[] = [
@@ -72,6 +77,7 @@ const initialTickets: Ticket[] = [
     createdBy: initialUsers[2].id,
     creatorName: initialUsers[2].name,
     creatorAvatar: initialUsers[2].avatar,
+    creatorRole: initialUsers[2].role,
     assignedTo: initialUsers[0].id,
     assigneeName: initialUsers[0].name,
     assigneeAvatar: initialUsers[0].avatar,
@@ -81,6 +87,8 @@ const initialTickets: Ticket[] = [
     comments: [
       {
         id: generateId(),
+        ticketId: '',
+        userId: initialUsers[0].id,
         content: 'We are looking into it',
         userName: initialUsers[0].name,
         userAvatar: initialUsers[0].avatar,
@@ -100,6 +108,7 @@ const initialTickets: Ticket[] = [
     createdBy: initialUsers[2].id,
     creatorName: initialUsers[2].name,
     creatorAvatar: initialUsers[2].avatar,
+    creatorRole: initialUsers[2].role,
     assignedTo: initialUsers[1].id,
     assigneeName: initialUsers[1].name,
     assigneeAvatar: initialUsers[1].avatar,
@@ -118,6 +127,7 @@ const initialTickets: Ticket[] = [
     createdBy: initialUsers[2].id,
     creatorName: initialUsers[2].name,
     creatorAvatar: initialUsers[2].avatar,
+    creatorRole: initialUsers[2].role,
     assignedTo: initialUsers[0].id,
     assigneeName: initialUsers[0].name,
     assigneeAvatar: initialUsers[0].avatar,
@@ -169,7 +179,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUsers(prev => [...prev, newUser]);
   };
 
-  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments' | 'attachments'>) => {
+  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments' | 'attachments'>, files?: File[]) => {
     if (!user) return;
 
     const newTicket: Ticket = {
@@ -178,6 +188,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdBy: user.id,
       creatorName: user.name,
       creatorAvatar: user.avatar,
+      creatorRole: user.role,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       comments: [],
@@ -186,11 +197,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTickets(prev => [...prev, newTicket]);
   };
 
-  const addTicketComment = (ticketId: string, content: string, isInternal: boolean, file: File | null) => {
+  const addTicketComment = (ticketId: string, content: string, isInternal: boolean, file?: File | null) => {
     if (!user) return;
 
     const newComment: TicketComment = {
       id: generateId(),
+      ticketId,
+      userId: user.id,
       content,
       userName: user.name,
       userAvatar: user.avatar,
@@ -199,10 +212,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isInternal,
       attachment: file ? {
         id: generateId(),
+        ticketId,
         filename: file.name,
         fileSize: file.size,
-        fileType: file.type,
-        fileUrl: URL.createObjectURL(file)
+        fileType: file.type as any,
+        fileUrl: URL.createObjectURL(file),
+        uploadedBy: user.id,
+        uploadedAt: new Date().toISOString()
       } : undefined
     };
 
@@ -218,7 +234,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
-  const updateTicket = (id: string, updates: Partial<Ticket>) => {
+  const updateTicket = (id: string, updates: Partial<Ticket>, files?: File[]) => {
     setTickets(prev => prev.map(ticket => {
       if (ticket.id === id) {
         const updatedTicket = { ...ticket, ...updates, updatedAt: new Date().toISOString() };
@@ -234,6 +250,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const routingNote = `Ticket was manually routed to department: ${department}, assignee: ${newAssignee}.`;
             const internalComment: TicketComment = {
               id: generateId(),
+              ticketId: id,
+              userId: 'system',
               content: routingNote,
               userName: 'System',
               userAvatar: '',
@@ -266,6 +284,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const assignmentNote = `Ticket was manually routed to department: ${department}, assignee: ${newAssignee}.`;
         const internalComment: TicketComment = {
           id: generateId(),
+          ticketId,
+          userId: 'system',
           content: assignmentNote,
           userName: 'System',
           userAvatar: '',
@@ -320,6 +340,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newDepartment: Department = {
       id: generateId(),
       ...department,
+      createdAt: new Date().toISOString(),
     };
     setDepartments(prev => [...prev, newDepartment]);
   };
@@ -332,6 +353,52 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteDepartment = (id: string) => {
     setDepartments(prev => prev.filter(department => department.id !== id));
+  };
+
+  // Helper methods for ticket filtering
+  const getMyTickets = () => {
+    if (!user) return [];
+    return tickets.filter(ticket => ticket.createdBy === user.id);
+  };
+
+  const getAssignedToMeTickets = () => {
+    if (!user) return [];
+    return tickets.filter(ticket => ticket.assignedTo === user.id);
+  };
+
+  const getOpenTickets = () => {
+    return tickets.filter(ticket => ['open', 'in_progress'].includes(ticket.status));
+  };
+
+  const getClosedTickets = () => {
+    return tickets.filter(ticket => ['resolved', 'closed'].includes(ticket.status));
+  };
+
+  const deleteTicket = (id: string) => {
+    setTickets(prev => prev.filter(ticket => ticket.id !== id));
+  };
+
+  const deleteAttachment = (ticketId: string, attachmentId: string) => {
+    setTickets(prev => prev.map(ticket => {
+      if (ticket.id === ticketId) {
+        return {
+          ...ticket,
+          attachments: ticket.attachments?.filter(attachment => attachment.id !== attachmentId) || [],
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return ticket;
+    }));
+  };
+
+  const updateUser = (id: string, updates: Partial<User>) => {
+    setUsers(prev => prev.map(user =>
+      user.id === id ? { ...user, ...updates } : user
+    ));
+  };
+
+  const deleteUser = (id: string) => {
+    setUsers(prev => prev.filter(user => user.id !== id));
   };
 
   return (
@@ -350,7 +417,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteUser,
       addDepartment,
       updateDepartment,
-      deleteDepartment
+      deleteDepartment,
+      getMyTickets,
+      getAssignedToMeTickets,
+      getOpenTickets,
+      getClosedTickets
     }}>
       {children}
     </DataContext.Provider>
