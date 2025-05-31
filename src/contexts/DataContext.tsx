@@ -40,6 +40,7 @@ const initialUsers: User[] = [
     role: 'admin',
     department: 'IT',
     avatar: 'https://api.dicebear.com/7.x/lorelei/svg?seed=John',
+    createdAt: new Date().toISOString(),
   },
   {
     id: generateId(),
@@ -48,6 +49,7 @@ const initialUsers: User[] = [
     role: 'faculty',
     department: 'Registrar',
     avatar: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Alice',
+    createdAt: new Date().toISOString(),
   },
   {
     id: generateId(),
@@ -56,6 +58,7 @@ const initialUsers: User[] = [
     role: 'student',
     department: 'Student Services',
     avatar: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Bob',
+    createdAt: new Date().toISOString(),
   },
 ];
 

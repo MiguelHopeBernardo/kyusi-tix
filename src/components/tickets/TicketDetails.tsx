@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Ticket, TicketStatus } from '@/models';
+import { Ticket, TicketStatus, UserDetails } from '@/models';
 import { toast } from "@/components/ui/sonner";
 import TicketHeader from './TicketHeader';
 import TicketInfo from './TicketInfo';
@@ -34,7 +34,13 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  const adminsAndFaculty = users.filter(u => u.role === 'admin' || u.role === 'faculty');
+  // Convert users to UserDetails format
+  const userDetails: UserDetails[] = users.map(user => ({
+    ...user,
+    createdAt: user.createdAt || new Date().toISOString()
+  }));
+  
+  const adminsAndFaculty = userDetails.filter(u => u.role === 'admin' || u.role === 'faculty');
 
   // Keep the current ticket state updated with the latest data from the tickets array
   useEffect(() => {
