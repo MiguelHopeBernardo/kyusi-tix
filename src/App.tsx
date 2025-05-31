@@ -1,45 +1,49 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { DataProvider } from './contexts/DataContext';
-import { Toaster } from "@/components/ui/sonner";
-import AppLayout from './components/layout/AppLayout';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Tickets from './pages/Tickets';
-import Users from './pages/Users';
-import Profile from './pages/Profile';
-import Departments from './pages/Departments';
-import KyusiChat from './pages/KyusiChat';
-import Logs from './pages/Logs';
-import NotFound from './pages/NotFound';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { DataProvider } from '@/contexts/DataContext';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import Dashboard from '@/pages/Dashboard';
+import Tickets from '@/pages/Tickets';
+import Users from '@/pages/Users';
+import Departments from '@/pages/Departments';
+import Logs from '@/pages/Logs';
+import Profile from '@/pages/Profile';
+import KyusiChat from '@/pages/KyusiChat';
+import NotFound from '@/pages/NotFound';
+import './App.css';
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <Router>
-          <div className="min-h-screen bg-background">
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <DataProvider>
+          <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/" element={<AppLayout />}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<ResponsiveLayout />}>
+                <Route index element={<Index />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="tickets" element={<Tickets />} />
                 <Route path="users" element={<Users />} />
-                <Route path="profile" element={<Profile />} />
                 <Route path="departments" element={<Departments />} />
-                <Route path="chat" element={<KyusiChat />} />
                 <Route path="logs" element={<Logs />} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="chat" element={<KyusiChat />} />
               </Route>
+              <Route path="*" element={<NotFound />} />
             </Routes>
-            <Toaster />
-          </div>
-        </Router>
-      </DataProvider>
-    </AuthProvider>
+          </Router>
+          <Toaster />
+        </DataProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

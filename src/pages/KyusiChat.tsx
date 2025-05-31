@@ -6,13 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send } from 'lucide-react';
-import { toast } from "@/components/ui/sonner";
+import { ChatService } from '@/services/chatService';
+import CreateTicketDialog from '@/components/chat/CreateTicketDialog';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'assistant';
   timestamp: Date;
+  hasTicketOption?: boolean;
 }
 
 const KyusiChat = () => {
@@ -20,7 +22,7 @@ const KyusiChat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hello! I\'m KyusiChat, your PUPQC virtual assistant. How may I help you with your inquiries about PUP Quezon City today?',
+      content: 'Hello! I\'m KyusiChat, your PUPQC virtual assistant. I can help you with questions about enrollment, admission, programs, tuition fees, and other university services. How may I assist you today?',
       sender: 'assistant',
       timestamp: new Date(),
     },
@@ -34,9 +36,9 @@ const KyusiChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const callChatAPI = async (userMessage: string): Promise<string> => {
+  const callGeminiAPI = async (userMessage: string): Promise<string> => {
     try {
-      console.log('Sending message to Django backend:', userMessage);
+      console.log('Sending message to Django backend (Gemini fallback):', userMessage);
       
       const response = await fetch('http://127.0.0.1:8000/chat/ask/', {
         method: 'POST',
@@ -60,17 +62,10 @@ const KyusiChat = () => {
       const data = await response.json();
       console.log('Response from Django backend:', data);
       
-      return data.response || 'I apologize, but I\'m having trouble processing your request. Please try asking about PUPQC enrollment, programs, or other university services.';
+      return data.response || 'I apologize, but I\'m having trouble processing your request.';
     } catch (error) {
-      console.error('Chat API error:', error);
-      
-      if (error instanceof Error) {
-        return error.message.includes('Rate limit') 
-          ? error.message
-          : 'I\'m currently experiencing technical difficulties. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or visit www.pup.edu.ph.';
-      }
-      
-      return 'I\'m currently experiencing technical difficulties. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or visit www.pup.edu.ph.';
+      console.error('Gemini API error:', error);
+      throw error;
     }
   };
   
@@ -93,22 +88,52 @@ const KyusiChat = () => {
     setIsTyping(true);
     
     try {
-      // Get AI response from Django backend
-      const aiResponse = await callChatAPI(currentInput);
+      // First, try rule-based response
+      const ruleBasedResult = ChatService.getRuleBasedResponse(currentInput);
       
-      const aiMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        content: aiResponse,
-        sender: 'assistant',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      if (ruleBasedResult.isRuleBased) {
+        console.log('Using rule-based response');
+        const aiMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          content: ruleBasedResult.response,
+          sender: 'assistant',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        // Fallback to Gemini API
+        console.log('Using Gemini API fallback');
+        try {
+          const aiResponse = await callGeminiAPI(currentInput);
+          
+          const aiMessage: Message = {
+            id: `assistant-${Date.now()}`,
+            content: aiResponse,
+            sender: 'assistant',
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+        } catch (geminiError) {
+          console.error('Gemini API failed:', geminiError);
+          
+          // If Gemini fails, provide fallback message with ticket option
+          const fallbackMessage: Message = {
+            id: `assistant-${Date.now()}`,
+            content: "I apologize, but I can't answer that question. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or create a ticket here for personalized support.",
+            sender: 'assistant',
+            timestamp: new Date(),
+            hasTicketOption: true,
+          };
+          
+          setMessages(prev => [...prev, fallbackMessage]);
+        }
+      }
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error('Error in chat handling:', error);
       const errorMessage: Message = {
         id: `assistant-${Date.now()}`,
-        content: 'I apologize for the technical difficulty. Please try again or contact PUPQC directly for assistance.',
+        content: 'I apologize for the technical difficulty. Please try again or contact PUPQC directly for assistance at (02) 8287-1717.',
         sender: 'assistant',
         timestamp: new Date(),
       };
@@ -117,6 +142,26 @@ const KyusiChat = () => {
       setIsTyping(false);
     }
   };
+
+  const renderMessageContent = (message: Message) => {
+    if (message.hasTicketOption) {
+      const parts = message.content.split('here');
+      if (parts.length === 2) {
+        return (
+          <div className="whitespace-pre-wrap break-words">
+            {parts[0]}
+            <CreateTicketDialog>
+              <button className="text-blue-600 hover:text-blue-800 underline font-medium">
+                here
+              </button>
+            </CreateTicketDialog>
+            {parts[1]}
+          </div>
+        );
+      }
+    }
+    return <div className="whitespace-pre-wrap break-words">{message.content}</div>;
+  };
   
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)]">
@@ -124,7 +169,7 @@ const KyusiChat = () => {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">KyusiChat</h2>
           <p className="text-muted-foreground">
-            PUPQC AI Assistant powered by Gemini
+            PUPQC AI Assistant with Smart Responses
           </p>
         </div>
       </div>
@@ -164,9 +209,7 @@ const KyusiChat = () => {
                       : 'bg-muted'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap break-words">
-                    {message.content}
-                  </div>
+                  {renderMessageContent(message)}
                   <div
                     className={`text-xs mt-1 ${
                       message.sender === 'user'
