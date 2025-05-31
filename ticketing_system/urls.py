@@ -50,7 +50,6 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('tickets/', include('tickets.urls')),
     path('users/', include('users.urls')),
-    path('chat/', include('chat.urls')),  # Add chat URLs
     path('accounts/', include('django.contrib.auth.urls')),  # For built-in auth views
 ]
 

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { UserDetails, UserRole } from '@/models';
+import { UserDetails } from '@/models';
 import UserFilter from '@/components/users/UserFilter';
 import UserForm from '@/components/users/UserForm';
 import UserTable from '@/components/users/UserTable';
@@ -26,7 +26,7 @@ const Users = () => {
   // Form states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('student');
+  const [role, setRole] = useState('student');
   const [department, setDepartment] = useState<string | undefined>(undefined);
   const [position, setPosition] = useState('');
   const [studentId, setStudentId] = useState('');
@@ -49,7 +49,7 @@ const Users = () => {
   const openEditUserDialog = (user: UserDetails) => {
     setName(user.name);
     setEmail(user.email);
-    setRole(user.role as UserRole);
+    setRole(user.role);
     setDepartment(user.department);
     setPosition(user.position || '');
     setStudentId(user.studentId || '');
@@ -93,23 +93,13 @@ const Users = () => {
     resetForm();
   };
   
+  // Handle department change
   const handleDepartmentChange = (value: string) => {
     setDepartment(value === 'none' ? undefined : value);
   };
-
-  // Handle role change - convert string to UserRole
-  const handleRoleChange = (roleValue: string) => {
-    setRole(roleValue as UserRole);
-  };
-  
-  // Convert users to UserDetails format
-  const userDetails: UserDetails[] = users.map(user => ({
-    ...user,
-    createdAt: user.createdAt || new Date().toISOString()
-  }));
   
   // Filter users
-  const filteredUsers = userDetails.filter(user => {
+  const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -168,7 +158,7 @@ const Users = () => {
         email={email}
         setEmail={setEmail}
         role={role}
-        setRole={handleRoleChange}
+        setRole={setRole}
         department={department}
         handleDepartmentChange={handleDepartmentChange}
         position={position}

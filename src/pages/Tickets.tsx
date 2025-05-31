@@ -31,10 +31,8 @@ const Tickets = () => {
   };
   
   const handleExportCSV = () => {
-    // Get tickets based on user role
-    const myTickets = getMyTickets();
-    const assignedTickets = ['admin', 'faculty'].includes(user?.role || '') ? getAssignedToMeTickets() : [];
-    const allTickets = [...myTickets, ...assignedTickets];
+    // Get all tickets
+    const allTickets = [...getMyTickets(), ...getAssignedToMeTickets()];
     
     if (allTickets.length === 0) {
       toast.error("No tickets to export");
@@ -75,9 +73,6 @@ const Tickets = () => {
     toast.success("Tickets exported successfully");
   };
   
-  // Check if user can see assigned tickets (admin and faculty only)
-  const canSeeAssignedTickets = ['admin', 'faculty'].includes(user?.role || '');
-  
   // Only show tabs that are relevant to the user's role
   const renderTabs = () => {
     const isAdmin = user?.role === 'admin';
@@ -91,19 +86,11 @@ const Tickets = () => {
           <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
         </TabsList>
       );
-    } else if (canSeeAssignedTickets) {
-      // Faculty can see assigned tickets
+    } else {
       return (
         <TabsList className="grid grid-cols-2">
           <TabsTrigger value="my">My Tickets</TabsTrigger>
           <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
-        </TabsList>
-      );
-    } else {
-      // Students and alumni only see their own tickets
-      return (
-        <TabsList className="grid grid-cols-1">
-          <TabsTrigger value="my">My Tickets</TabsTrigger>
         </TabsList>
       );
     }
@@ -114,46 +101,30 @@ const Tickets = () => {
     if (user?.role === 'admin') return null;
     
     const myTickets = getMyTickets();
-    const assignedTickets = canSeeAssignedTickets ? getAssignedToMeTickets() : [];
+    const assignedTickets = getAssignedToMeTickets();
     
-    if (canSeeAssignedTickets) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm font-medium">My Tickets</p>
-              <p className="text-xs text-muted-foreground">Tickets you've created</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl">{assignedTickets.length}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm font-medium">Assigned To Me</p>
-              <p className="text-xs text-muted-foreground">Tickets requiring your attention</p>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    } else {
-      return (
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm font-medium">My Tickets</p>
-              <p className="text-xs text-muted-foreground">Tickets you've created</p>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-medium">My Tickets</p>
+            <p className="text-xs text-muted-foreground">Tickets you've created</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-2xl">{assignedTickets.length}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-medium">Assigned To Me</p>
+            <p className="text-xs text-muted-foreground">Tickets requiring your attention</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
   
   return (
@@ -217,17 +188,13 @@ const Tickets = () => {
             emptyMessage="You haven't created any tickets"
           />
         </TabsContent>
-        
-        {/* Assigned tab - only for admin and faculty */}
-        {canSeeAssignedTickets && (
-          <TabsContent value="assigned" className="mt-6">
-            <TicketTable 
-              tickets={getAssignedToMeTickets()}
-              onViewTicket={handleViewTicket}
-              emptyMessage="No tickets assigned to you"
-            />
-          </TabsContent>
-        )}
+        <TabsContent value="assigned" className="mt-6">
+          <TicketTable 
+            tickets={getAssignedToMeTickets()}
+            onViewTicket={handleViewTicket}
+            emptyMessage="No tickets assigned to you"
+          />
+        </TabsContent>
       </Tabs>
       
       {/* Ticket creation dialog */}

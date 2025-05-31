@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
@@ -88,7 +89,6 @@ const Departments = () => {
       description,
       head: head || undefined,
       members: editingDepartment?.members || 0,
-      createdAt: new Date().toISOString(),
     };
     
     if (editingDepartment) {

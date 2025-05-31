@@ -1,29 +1,43 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send } from 'lucide-react';
-import { ChatService } from '@/services/chatService';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'assistant';
   timestamp: Date;
-  hasTicketOption?: boolean;
 }
+
+// Mock responses based on keywords
+const mockResponses: Record<string, string> = {
+  'hello': 'Hello! How can I assist you with your inquiries about PUP Quezon City today?',
+  'hi': 'Hi there! I\'m KyusiChat, your PUPQC virtual assistant. How may I help you?',
+  'enroll': 'To enroll at PUP Quezon City, you need to follow these steps:\n\n1. Check the official PUP website for enrollment schedules\n2. Complete the online registration form\n3. Submit required documents\n4. Pay the enrollment fee\n5. Attend the orientation\n\nFor more details, visit the official PUP website or contact the registrar\'s office.',
+  'admission': 'The admission process for PUP Quezon City involves taking the PUPCET (PUP College Entrance Test). Applications usually start around January to February each year. Visit the official PUP website for the exact dates and requirements.',
+  'schedule': 'Class schedules are released after the enrollment period. You can check your schedule through the PUP Student Information System (SIS) using your student credentials.',
+  'requirements': 'General requirements for admission include:\n- Form 138 (High School Report Card)\n- Certificate of Good Moral Character\n- Birth Certificate\n- 2x2 ID pictures\n- Entrance Exam Results\n\nSpecific programs may have additional requirements.',
+  'tuition': 'PUP is one of the most affordable state universities in the Philippines. Tuition fees range from approximately PHP 1,000 to PHP 1,500 per semester, depending on your program. There are also miscellaneous fees for various services.',
+  'location': 'PUP Quezon City is located at San Bartolome, Novaliches, Quezon City. It\'s accessible via Commonwealth Avenue and several public transportation routes.',
+  'programs': 'PUP Quezon City offers various undergraduate programs including:\n- BS Information Technology\n- BS Business Administration\n- BS Accountancy\n- BS Elementary Education\n- BS Secondary Education\n- BS Entrepreneurship\nand many more.',
+  'contact': 'You can contact PUP Quezon City through:\nPhone: (02) 8287-1717\nEmail: info@pup.edu.ph\nWebsite: www.pup.edu.ph',
+  'events': 'PUP Quezon City hosts various events throughout the academic year including University Week, Foundation Day celebrations, departmental seminars, sports festivals, and cultural shows. Check the official PUP social media pages for updates.',
+  'grades': 'You can check your grades through the PUP Student Information System (SIS). Log in with your student credentials and navigate to the grades section.',
+  'scholarship': 'PUP offers various scholarship programs including:\n- Academic Scholars\n- Non-Academic Scholars (sports, cultural)\n- Government Scholarship Programs (CHED, DOST)\n- Private Scholarship Programs\nVisit the Office of Student Services for more information.',
+  'default': 'I don\'t have specific information about that. For accurate details, please visit the official PUP website at www.pup.edu.ph or contact the university directly.'
+};
 
 const KyusiChat = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hello! I\'m KyusiChat, your PUPQC virtual assistant. I can help you with questions about enrollment, admission, programs, tuition fees, and other university services. How may I assist you today?',
+      content: 'Hello! I\'m KyusiChat, your PUPQC virtual assistant. How may I help you today?',
       sender: 'assistant',
       timestamp: new Date(),
     },
@@ -37,40 +51,7 @@ const KyusiChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const callGeminiAPI = async (userMessage: string): Promise<string> => {
-    try {
-      console.log('Sending message to Django backend (Gemini fallback):', userMessage);
-      
-      const response = await fetch('http://127.0.0.1:8000/chat/ask/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          message: userMessage,
-          user_id: user?.id
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment before asking another question.');
-        }
-        throw new Error('Failed to get response from chat service');
-      }
-
-      const data = await response.json();
-      console.log('Response from Django backend:', data);
-      
-      return data.response || 'I apologize, but I\'m having trouble processing your request.';
-    } catch (error) {
-      console.error('Gemini API error:', error);
-      throw error;
-    }
-  };
-  
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!input.trim()) return;
@@ -84,85 +65,32 @@ const KyusiChat = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
     setInput('');
     setIsTyping(true);
     
-    try {
-      // First, try rule-based response
-      const ruleBasedResult = ChatService.getRuleBasedResponse(currentInput);
+    // Simulate AI typing
+    setTimeout(() => {
+      // Generate response based on keywords
+      let responseContent = mockResponses.default;
       
-      if (ruleBasedResult.isRuleBased) {
-        console.log('Using rule-based response');
-        const aiMessage: Message = {
-          id: `assistant-${Date.now()}`,
-          content: ruleBasedResult.response,
-          sender: 'assistant',
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        // Fallback to Gemini API
-        console.log('Using Gemini API fallback');
-        try {
-          const aiResponse = await callGeminiAPI(currentInput);
-          
-          const aiMessage: Message = {
-            id: `assistant-${Date.now()}`,
-            content: aiResponse,
-            sender: 'assistant',
-            timestamp: new Date(),
-          };
-          
-          setMessages(prev => [...prev, aiMessage]);
-        } catch (geminiError) {
-          console.error('Gemini API failed:', geminiError);
-          
-          // If Gemini fails, provide fallback message with ticket option
-          const fallbackMessage: Message = {
-            id: `assistant-${Date.now()}`,
-            content: "I apologize, but I can't answer that question. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or create a ticket here for personalized support.",
-            sender: 'assistant',
-            timestamp: new Date(),
-            hasTicketOption: true,
-          };
-          
-          setMessages(prev => [...prev, fallbackMessage]);
+      const lowerInput = input.toLowerCase();
+      for (const [keyword, response] of Object.entries(mockResponses)) {
+        if (lowerInput.includes(keyword)) {
+          responseContent = response;
+          break;
         }
       }
-    } catch (error) {
-      console.error('Error in chat handling:', error);
-      const errorMessage: Message = {
+      
+      const aiMessage: Message = {
         id: `assistant-${Date.now()}`,
-        content: 'I apologize for the technical difficulty. Please try again or contact PUPQC directly for assistance at (02) 8287-1717.',
+        content: responseContent,
         sender: 'assistant',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      
+      setMessages(prev => [...prev, aiMessage]);
       setIsTyping(false);
-    }
-  };
-
-  const renderMessageContent = (message: Message) => {
-    if (message.hasTicketOption) {
-      const parts = message.content.split('here');
-      if (parts.length === 2) {
-        return (
-          <div className="whitespace-pre-wrap break-words">
-            {parts[0]}
-            <button 
-              onClick={() => navigate('/tickets')}
-              className="text-blue-600 hover:text-blue-800 underline font-medium"
-            >
-              here
-            </button>
-            {parts[1]}
-          </div>
-        );
-      }
-    }
-    return <div className="whitespace-pre-wrap break-words">{message.content}</div>;
+    }, 1500);
   };
   
   return (
@@ -171,7 +99,7 @@ const KyusiChat = () => {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">KyusiChat</h2>
           <p className="text-muted-foreground">
-            PUPQC AI Assistant with Smart Responses
+            PUPQC AI Assistant for FAQs
           </p>
         </div>
       </div>
@@ -211,7 +139,9 @@ const KyusiChat = () => {
                       : 'bg-muted'
                   }`}
                 >
-                  {renderMessageContent(message)}
+                  <div className="whitespace-pre-wrap break-words">
+                    {message.content}
+                  </div>
                   <div
                     className={`text-xs mt-1 ${
                       message.sender === 'user'
@@ -255,7 +185,7 @@ const KyusiChat = () => {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about PUPQC enrollment, programs, admissions..."
+              placeholder="Ask KyusiChat a question..."
               className="flex-1"
               disabled={isTyping}
             />
@@ -265,7 +195,7 @@ const KyusiChat = () => {
             </Button>
           </form>
           <div className="mt-2 text-xs text-muted-foreground">
-            Ask about: enrollment, admission, programs, scholarships, tuition fees, campus location
+            Try asking about: enrollment, admission, programs, scholarships, tuition fees
           </div>
         </div>
       </Card>
