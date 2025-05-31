@@ -8,16 +8,33 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from users import views as user_views
 
+@csrf_exempt
 def health_check(request):
-    """Simple health check endpoint"""
-    response = JsonResponse({'status': 'ok', 'message': 'Django server is running'})
-    response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '')
+    """Simple health check endpoint with proper CORS handling"""
+    
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = JsonResponse({'status': 'ok'})
+        response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
+        response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type, Accept, Authorization, X-CSRFToken'
+        response['Access-Control-Allow-Credentials'] = 'true'
+        response['Access-Control-Max-Age'] = '86400'
+        return response
+    
+    # Handle actual request
+    response = JsonResponse({
+        'status': 'ok', 
+        'message': 'Django server is running',
+        'cors_configured': True
+    })
+    response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
     response['Access-Control-Allow-Credentials'] = 'true'
     return response
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('health/', health_check, name='health_check'),  # Add health check
+    path('health/', health_check, name='health_check'),  # Updated health check with CORS
     path('', RedirectView.as_view(url='login/', permanent=False)),  # Redirect root to login
     path('login/', csrf_exempt(user_views.login_view), name='login'),  # Custom login view with CSRF exemption for API
     path('logout/', csrf_exempt(user_views.logout_view), name='logout'),

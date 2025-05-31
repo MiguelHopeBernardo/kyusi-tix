@@ -1,3 +1,4 @@
+
 import os
 from pathlib import Path
 
@@ -39,11 +40,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# CORS settings
+# CORS settings - Updated to include the current Lovable app URL
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",
     "https://27ef5806-eb5b-416b-8c67-813a42467d66.lovableproject.com",
+    "https://id-preview--27ef5806-eb5b-416b-8c67-813a42467d66.lovable.app",  # Add the current Lovable app URL
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -62,7 +64,20 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+# Additional CORS settings to ensure preflight requests work
+CORS_PREFLIGHT_MAX_AGE = 86400
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
 ROOT_URLCONF = 'ticketing_system.urls'
+
+# ... keep existing code (TEMPLATES, WSGI_APPLICATION, DATABASES, AUTH_USER_MODEL sections)
 
 TEMPLATES = [
     {
@@ -97,6 +112,7 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
+# ... keep existing code (PASSWORD_VALIDATORS, LANGUAGE_CODE, TIME_ZONE, USE_I18N, USE_TZ sections)
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
