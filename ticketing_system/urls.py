@@ -4,13 +4,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from django.views.decorators.csrf import csrf_exempt
 from users import views as user_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(url='login/', permanent=False)),  # Redirect root to login
-    path('login/', user_views.login_view, name='login'),  # Custom login view
-    path('logout/', user_views.logout_view, name='logout'),
+    path('login/', csrf_exempt(user_views.login_view), name='login'),  # Custom login view with CSRF exemption for API
+    path('logout/', csrf_exempt(user_views.logout_view), name='logout'),
     path('dashboard/', include('dashboard.urls')),
     path('tickets/', include('tickets.urls')),
     path('users/', include('users.urls')),

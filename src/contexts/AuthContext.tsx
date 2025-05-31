@@ -41,6 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if user is authenticated by making a request to get current user info
       const response = await fetch('http://127.0.0.1:8000/users/profile/', {
         credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
       });
       
       if (response.ok) {
@@ -67,33 +71,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Make login request to Django
+      // Make login request to Django with JSON
       const response = await fetch('http://127.0.0.1:8000/login/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           username,
           password,
         }),
         credentials: 'include',
       });
       
-      if (response.ok) {
-        // If login successful, get user data
-        await checkAuthStatus();
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Set user data from response
+        setUser({
+          id: data.user.id,
+          name: data.user.first_name + ' ' + data.user.last_name,
+          email: data.user.email,
+          username: data.user.username,
+          role: data.user.role,
+          department: data.user.department,
+          avatar: data.user.profile_image,
+        });
         toast.success(`Welcome back!`);
         setIsLoading(false);
         return true;
       } else {
-        toast.error("Invalid credentials");
+        toast.error(data.error || "Invalid credentials");
         setIsLoading(false);
         return false;
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error("Login failed");
+      toast.error("Login failed - please check if the Django server is running");
       setIsLoading(false);
       return false;
     }
