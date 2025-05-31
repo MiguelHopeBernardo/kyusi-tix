@@ -27,13 +27,14 @@ import {
   MessageSquare,
   ArrowLeftFromLine,
   User,
+  X,
 } from 'lucide-react';
 
 const AppSidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { state } = useSidebar();
+  const { state, setOpenMobile, openMobile } = useSidebar();
   
   const handleLogout = async () => {
     await logout();
@@ -78,28 +79,45 @@ const AppSidebar = () => {
   ];
 
   return (
-    <Sidebar>
+    <Sidebar className="bg-red-800 border-none">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white overflow-hidden">
-            <img 
-              src="https://www.pup.edu.ph/about/images/PUPLogo.png" 
-              alt="PUP Logo" 
-              className="w-full h-full object-contain"
-            />
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-full bg-white overflow-hidden">
+              <img 
+                src="https://www.pup.edu.ph/about/images/PUPLogo.png" 
+                alt="PUP Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            {state === "expanded" && <span className="font-semibold text-lg text-white">KyusiTix</span>}
           </div>
-          {state === "expanded" && <span className="font-semibold text-lg">KyusiTix</span>}
+          {/* Close button for mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-white hover:bg-red-700"
+            onClick={() => setOpenMobile(false)}
+          >
+            <X className="size-4" />
+          </Button>
         </div>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1 px-2">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <Link to={item.url}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)}
+                    className={`text-white hover:bg-red-700 data-[active=true]:bg-red-900 data-[active=true]:text-white ${
+                      isActive(item.url) ? 'bg-red-900' : ''
+                    }`}
+                  >
+                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2 rounded-lg">
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
                     </Link>
@@ -112,17 +130,26 @@ const AppSidebar = () => {
       </SidebarContent>
       
       <SidebarFooter>
-        <SidebarMenu>
+        <SidebarMenu className="space-y-1 px-2">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive('/profile')}>
-              <Link to="/profile">
+            <SidebarMenuButton 
+              asChild 
+              isActive={isActive('/profile')}
+              className={`text-white hover:bg-red-700 data-[active=true]:bg-red-900 data-[active=true]:text-white ${
+                isActive('/profile') ? 'bg-red-900' : ''
+              }`}
+            >
+              <Link to="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg">
                 <User className="size-4" />
                 <span>Profile</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              className="text-white hover:bg-red-700 flex items-center gap-3 px-3 py-2 rounded-lg"
+            >
               <ArrowLeftFromLine className="size-4" />
               <span>Sign Out</span>
             </SidebarMenuButton>
@@ -145,7 +172,7 @@ const CollapsibleLayout = () => {
           {/* Top Header */}
           <div className="bg-white border-b px-4 md:px-6 py-3">
             <div className="flex items-center justify-between">
-              <SidebarTrigger />
+              <SidebarTrigger className="text-gray-600" />
               
               {/* User Info */}
               <div className="flex items-center gap-3">
@@ -155,7 +182,7 @@ const CollapsibleLayout = () => {
                 </div>
                 <Avatar className="size-8">
                   <AvatarImage src={user?.avatar || ""} alt={user?.name || "Avatar"} />
-                  <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  <AvatarFallback className="bg-red-600 text-white">{user?.name?.charAt(0) || "U"}</AvatarFallback>
                 </Avatar>
               </div>
             </div>
