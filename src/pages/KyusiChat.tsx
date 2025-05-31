@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send } from 'lucide-react';
 import { ChatService } from '@/services/chatService';
-import CreateTicketDialog from '@/components/chat/CreateTicketDialog';
 
 interface Message {
   id: string;
@@ -19,6 +19,7 @@ interface Message {
 
 const KyusiChat = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -150,11 +151,12 @@ const KyusiChat = () => {
         return (
           <div className="whitespace-pre-wrap break-words">
             {parts[0]}
-            <CreateTicketDialog>
-              <button className="text-blue-600 hover:text-blue-800 underline font-medium">
-                here
-              </button>
-            </CreateTicketDialog>
+            <button 
+              onClick={() => navigate('/tickets')}
+              className="text-blue-600 hover:text-blue-800 underline font-medium"
+            >
+              here
+            </button>
             {parts[1]}
           </div>
         );

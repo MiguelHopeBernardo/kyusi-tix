@@ -7,7 +7,7 @@ interface RuleBasedResponse {
 export class ChatService {
   private static enrollmentResponses = [
     "For enrollment at PUPQC, you need to take the PUPCET (PUP College Entrance Test). Applications are usually open from January to February. Required documents include Form 138, Good Moral Certificate, Birth Certificate, and 2x2 photos. For more details, contact PUPQC at (02) 8287-1717 or visit www.pup.edu.ph.",
-    "PUPQC enrollment requires passing the PUPCET exam first. The entrance exam is typically held annually. You'll need your high school records (Form 138), good moral certificate, birth certificate, and passport-sized photos. Visit the PUPQC campus at San Bartolome, Novaliches, Quezon City for more information.",
+    "PUPQC enrollment requires passing the PUPCET exam first. The entrance exam is typically held annually. You'll need your high school records (Form 138), good moral certificate, birth certificate, and passport-sized photos. Visit the PUPQC campus at Don Fabian, Quezon City for more information.",
     "To enroll at PUPQC: 1) Take and pass the PUPCET, 2) Submit required documents (Form 138, Good Moral, Birth Certificate, photos), 3) Complete the enrollment process. PUPCET applications open around January-February. Contact (02) 8287-1717 for current schedules."
   ];
 
@@ -24,15 +24,15 @@ export class ChatService {
   ];
 
   private static tuitionResponses = [
-    "PUPQC offers very affordable education with tuition fees around PHP 1,000-1,500 per semester, making it one of the most cost-effective universities in the Philippines. Additional fees may apply for laboratory, library, and other services. Contact the Finance Office for exact current rates.",
-    "As a state university, PUPQC provides quality education at minimal cost. Tuition is approximately PHP 1,000-1,500 per semester. This makes PUPQC accessible to students from various economic backgrounds. Other fees like registration and laboratory fees are also kept minimal.",
-    "PUPQC tuition fees are very affordable, typically ranging from PHP 1,000-1,500 per semester. This low cost is part of PUP's mission to provide quality higher education to all Filipino students regardless of financial capacity."
+    "PUPQC offers free tuition! This program is part of the Universal Access to Quality Tertiary Education Act (RA 10931), which mandates free higher education for students in state universities and colleges. Additional fees may apply for laboratory, library, and other services. Contact the Finance Office for exact current rates.",
+    "As a state university, PUPQC provides FREE tuition under the Universal Access to Quality Tertiary Education Act. This makes quality higher education accessible to all Filipino students regardless of financial capacity. Other minimal fees like registration and laboratory fees may apply.",
+    "Great news! PUPQC tuition is FREE under RA 10931 (Universal Access to Quality Tertiary Education Act). This law provides free higher education in all state universities and colleges. Only minimal fees for laboratory, library, and other services may apply."
   ];
 
   private static locationResponses = [
-    "PUPQC is located at San Bartolome, Novaliches, Quezon City. The campus is accessible by public transportation including jeepneys and buses. You can contact them at (02) 8287-1717 or visit www.pup.edu.ph for directions and campus maps.",
-    "The PUPQC campus is situated in San Bartolome, Novaliches, Quezon City. It's easily reachable by various public transport options. For specific directions to the campus, you can call (02) 8287-1717 or check their website.",
-    "PUPQC address: San Bartolome, Novaliches, Quezon City. The campus serves the northern part of Metro Manila and nearby provinces. Public transportation is readily available to reach the university."
+    "PUPQC is located at Don Fabian, Quezon City, 1121 Metro Manila. The campus is accessible by public transportation including jeepneys and buses. You can contact them at (02) 8287-1717 or visit www.pup.edu.ph for directions and campus maps.",
+    "The PUPQC campus is situated in Don Fabian, Quezon City, 1121 Metro Manila. It's easily reachable by various public transport options. For specific directions to the campus, you can call (02) 8287-1717 or check their website.",
+    "PUPQC address: Don Fabian, Quezon City, 1121 Metro Manila. The campus serves the northern part of Metro Manila and nearby provinces. Public transportation is readily available to reach the university."
   ];
 
   private static scholarshipResponses = [
@@ -96,7 +96,7 @@ export class ChatService {
     // Location keywords
     if (lowerMessage.includes('location') || lowerMessage.includes('address') || 
         lowerMessage.includes('where') || lowerMessage.includes('direction') ||
-        lowerMessage.includes('campus') || lowerMessage.includes('novaliches')) {
+        lowerMessage.includes('campus') || lowerMessage.includes('don fabian')) {
       return {
         response: this.getRandomResponse(this.locationResponses),
         isRuleBased: true

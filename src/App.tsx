@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DataProvider } from '@/contexts/DataContext';
-import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
+import CollapsibleLayout from '@/components/layout/CollapsibleLayout';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
@@ -27,7 +27,7 @@ function App() {
           <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/" element={<ResponsiveLayout />}>
+              <Route path="/" element={<CollapsibleLayout />}>
                 <Route index element={<Index />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="tickets" element={<Tickets />} />
