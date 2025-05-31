@@ -1,58 +1,25 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "@/components/ui/sonner";
-import { useNavigate } from 'react-router-dom';
+import { authService } from '@/services/api';
 
-// Define roles
-export type UserRole = 'admin' | 'faculty' | 'student' | 'alumni';
+// Define roles to match Django choices
+export type UserRole = 'admin' | 'staff' | 'faculty' | 'student' | 'alumni';
 
-// User interface
+// User interface to match Django user model
 export interface User {
   id: string;
   name: string;
   email: string;
+  username: string;
   role: UserRole;
   department?: string;
   avatar?: string;
 }
 
-// Mock user data
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@pupqc.edu.ph',
-    role: 'admin',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
-  },
-  {
-    id: '2',
-    name: 'Faculty Member',
-    email: 'faculty@pupqc.edu.ph',
-    role: 'faculty',
-    department: 'Computer Science',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=faculty',
-  },
-  {
-    id: '3',
-    name: 'Student User',
-    email: 'student@pupqc.edu.ph',
-    role: 'student',
-    department: 'Computer Science',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=student',
-  },
-  {
-    id: '4',
-    name: 'Alumni User',
-    email: 'alumni@pupqc.edu.ph',
-    role: 'alumni',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alumni',
-  },
-];
-
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   forgotPassword: (email: string) => Promise<boolean>;
@@ -66,29 +33,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    checkAuthStatus();
   }, []);
 
+  const checkAuthStatus = async () => {
+    try {
+      // Check if user is authenticated by making a request to get current user info
+      const response = await fetch('http://127.0.0.1:8000/users/profile/', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setUser({
+          id: userData.id,
+          name: userData.first_name + ' ' + userData.last_name,
+          email: userData.email,
+          username: userData.username,
+          role: userData.role,
+          department: userData.department,
+          avatar: userData.profile_image,
+        });
+      }
+    } catch (error) {
+      console.log('User not authenticated:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Login function
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // In real app, this would be an API call
-      // For demo, we'll use mock data
-      const foundUser = mockUsers.find(u => u.email === email);
+      // Make login request to Django
+      const response = await fetch('http://127.0.0.1:8000/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+        }),
+        credentials: 'include',
+      });
       
-      // Simulate API latency
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (foundUser && password === 'password') { // Demo password
-        setUser(foundUser);
-        localStorage.setItem('user', JSON.stringify(foundUser));
-        toast.success(`Welcome, ${foundUser.name}`);
+      if (response.ok) {
+        // If login successful, get user data
+        await checkAuthStatus();
+        toast.success(`Welcome back!`);
         setIsLoading(false);
         return true;
       } else {
@@ -97,46 +92,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
     } catch (error) {
-      console.error(error);
+      console.error('Login error:', error);
       toast.error("Login failed");
       setIsLoading(false);
       return false;
     }
   };
 
-  // Fixed logout function - Use React Router for navigation instead of window.location
-  const logout = () => {
-    // Remove user from state and local storage
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.success("Logged out successfully");
-    
-    // We no longer use window.location.href which causes the app to reload
-    // Navigation will be handled by the component using the context
+  // Logout function
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear user state even if logout request fails
+      setUser(null);
+      toast.success("Logged out successfully");
+    }
   };
   
-  // Forgot password function
+  // Forgot password function (placeholder for now)
   const forgotPassword = async (email: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Check if the email exists in our mock data
-      const foundUser = mockUsers.find(u => u.email === email);
-      
-      // Simulate API latency
+      // This would typically make a request to Django's password reset endpoint
+      // For now, we'll just simulate the process
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (foundUser) {
-        toast.success(`Password reset link has been sent to ${email}`);
-        setIsLoading(false);
-        return true;
-      } else {
-        toast.error("Email not found in our system");
-        setIsLoading(false);
-        return false;
-      }
+      toast.success(`Password reset instructions have been sent to ${email}`);
+      setIsLoading(false);
+      return true;
     } catch (error) {
-      console.error(error);
+      console.error('Password reset error:', error);
       toast.error("Failed to process request");
       setIsLoading(false);
       return false;
