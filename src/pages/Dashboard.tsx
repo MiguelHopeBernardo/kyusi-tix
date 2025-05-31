@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import TicketTable from '@/components/tickets/TicketTable';
+import TicketDetails from '@/components/tickets/TicketDetails';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Ticket, TicketStatus } from '@/models';
@@ -21,6 +22,8 @@ const Dashboard = () => {
   const [urgentCount, setUrgentCount] = useState(0);
   const [resolvedTodayCount, setResolvedTodayCount] = useState(0);
   const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isTicketDetailsOpen, setIsTicketDetailsOpen] = useState(false);
   
   // Colors for pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -82,6 +85,11 @@ const Dashboard = () => {
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  const handleViewTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setIsTicketDetailsOpen(true);
   };
 
   // IMPORTANT: Move this conditional render after all hooks have been called
@@ -184,12 +192,20 @@ const Dashboard = () => {
                 tickets={recentTickets} 
                 showSearch={false}
                 emptyMessage="No tickets to display"
-                hideActionColumn={true}
+                hideActionColumn={false}
+                onViewTicket={handleViewTicket}
               />
             </CardContent>
           </Card>
         </>
       )}
+      
+      {/* Ticket Details Modal */}
+      <TicketDetails
+        open={isTicketDetailsOpen}
+        onOpenChange={setIsTicketDetailsOpen}
+        ticket={selectedTicket}
+      />
     </div>
   );
 };

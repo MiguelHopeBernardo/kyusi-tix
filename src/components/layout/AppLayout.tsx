@@ -1,227 +1,140 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
-  TicketCheck,
+  Ticket,
   Users,
-  Settings,
+  Building,
+  FileText,
   MessageSquare,
-  User,
-  LogOut,
-  Menu,
-  X
+  ArrowLeftFromLine,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
 
 const AppLayout = () => {
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
+  const { collapse } = useSidebar();
   
-  // Redirect non-admin users from dashboard to tickets page
-  useEffect(() => {
-    if (user?.role !== 'admin' && location.pathname === '/dashboard') {
-      navigate('/tickets');
-    }
-  }, [user, location.pathname, navigate]);
-
-  // Navigation items based on user role
-  const navigationItems = () => {
-    const baseItems = [
-      {
-        name: 'Dashboard',
-        to: '/dashboard',
-        icon: LayoutDashboard,
-        // Only show dashboard for admin users
-        roles: ['admin'],
-      },
-      {
-        name: 'Tickets',
-        to: '/tickets',
-        icon: TicketCheck,
-        roles: ['admin', 'faculty', 'student', 'alumni'],
-      },
-      {
-        name: 'User Roles',
-        to: '/users',
-        icon: Users,
-        roles: ['admin'],
-      },
-      {
-        name: 'Departments',
-        to: '/departments',
-        icon: Settings,
-        roles: ['admin'],
-      },
-      {
-        name: 'KyusiChat',
-        to: '/kyusichat',
-        icon: MessageSquare,
-        roles: ['admin', 'faculty', 'student', 'alumni'],
-      },
-    ];
-    
-    return baseItems.filter(item => item.roles.includes(user.role));
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-  
-  // Close sidebar when clicked outside on mobile
-  const handleMainClick = () => {
-    if (isMobile && sidebarOpen) {
-      setSidebarOpen(false);
-    }
-  };
-
-  // Handle logout with React Router navigation
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
-
+  
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <aside 
-        className={`${
-          sidebarOpen ? 'left-0' : '-left-64'
-        } fixed md:static md:left-0 z-30 w-64 h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-sidebar text-sidebar-foreground flex flex-col`}
-      >
-        {/* Logo */}
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <img 
-              src="https://www.pup.edu.ph/about/images/PUPLogo.png" 
-              alt="PUP Logo" 
-              className="h-8 w-auto"
-            />
-            <span className="text-xl font-bold">KyusiTix</span>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden text-sidebar-foreground" 
-            onClick={toggleSidebar}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        <Separator className="bg-sidebar-border" />
-        
-        {/* Navigation Links */}
-        <nav className="flex-grow p-4">
-          <ul className="space-y-1">
-            {navigationItems().map((item) => (
-              <li key={item.name}>
-                <NavLink 
-                  to={item.to} 
-                  className={({ isActive }) => 
-                    `flex items-center p-2 rounded-md transition-colors ${
-                      isActive 
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                        : 'hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground'
-                    }`
-                  }
-                  onClick={() => isMobile && setSidebarOpen(false)}
-                >
-                  <item.icon className="mr-3 h-5 w-5" />
-                  <span>{item.name}</span>
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        
-        <Separator className="bg-sidebar-border" />
-        
-        {/* User profile and logout */}
-        <div className="p-4 space-y-3">
-          <NavLink 
-            to="/profile"
-            className={({ isActive }) => 
-              `flex items-center p-2 rounded-md transition-colors ${
-                isActive 
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                  : 'hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground'
-              }`
-            }
-            onClick={() => isMobile && setSidebarOpen(false)}
-          >
-            <User className="mr-3 h-5 w-5" />
-            <span>Profile</span>
-          </NavLink>
-          
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-3 h-5 w-5" />
-            <span>Sign Out</span>
-          </Button>
-        </div>
-      </aside>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <header className="bg-white border-b shadow-sm p-4 z-20">
-          <div className="flex justify-between items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="md:hidden" 
-              onClick={toggleSidebar}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            <div className="ml-auto flex items-center space-x-2">
-              <div className="hidden sm:block text-right mr-2">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <Sidebar collapsible="icon" className="hidden md:flex">
+          <SidebarHeader>
+            <div className="flex items-center gap-2 px-4 py-2">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <span className="text-sm font-bold">KT</span>
               </div>
-              <Avatar>
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {user.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              <span className="font-semibold text-lg">KyusiTix</span>
             </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link to="/dashboard" className="flex items-center gap-2">
+                        <LayoutDashboard className="size-4" />
+                        <span>Dashboard</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link to="/tickets" className="flex items-center gap-2">
+                        <Ticket className="size-4" />
+                        <span>Tickets</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  {user?.role === 'admin' && (
+                    <>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <Link to="/users" className="flex items-center gap-2">
+                            <Users className="size-4" />
+                            <span>Users</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <Link to="/departments" className="flex items-center gap-2">
+                            <Building className="size-4" />
+                            <span>Departments</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <Link to="/logs" className="flex items-center gap-2">
+                            <FileText className="size-4" />
+                            <span>Activity Logs</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </>
+                  )}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link to="/chat" className="flex items-center gap-2">
+                        <MessageSquare className="size-4" />
+                        <span>KyusiChat</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <div className="flex items-center gap-2 px-4 py-3">
+              <Avatar className="size-8">
+                <AvatarImage src={user?.avatar || ""} alt={user?.name || "Avatar"} />
+                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold">{user?.name}</span>
+                <Button variant="link" size="sm" onClick={handleLogout} className="p-0 hover:underline">
+                  <ArrowLeftFromLine className="mr-2 size-4" />
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </SidebarFooter>
+        </Sidebar>
+
+        <div className="flex-1">
+          <div className="p-4 md:p-6">
+            <React.Suspense fallback={<p>Loading...</p>}>
+              <div className="w-full">
+                <Outlet />
+              </div>
+            </React.Suspense>
           </div>
-        </header>
-        
-        {/* Main Content Area */}
-        <main 
-          className="flex-1 overflow-y-auto p-4 md:p-6 bg-background"
-          onClick={handleMainClick}
-        >
-          <Outlet />
-        </main>
+        </div>
       </div>
-      
-      {/* Overlay for mobile when sidebar is open */}
-      {isMobile && sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-20"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-    </div>
+    </SidebarProvider>
   );
 };
 

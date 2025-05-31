@@ -1,394 +1,366 @@
-
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Ticket, Department, UserDetails, TicketStatus, TicketPriority, FileAttachment, TicketComment } from '@/models';
-import { mockTickets, mockDepartments, mockUsers } from '@/services/mockData';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { User, Ticket, TicketComment, TicketPriority, TicketStatus, Department } from '@/models';
 import { useAuth } from './AuthContext';
-import { toast } from "@/components/ui/sonner";
 
 interface DataContextType {
+  users: User[];
   tickets: Ticket[];
   departments: Department[];
-  users: UserDetails[];
-  addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>, files?: File[]) => void;
-  updateTicket: (id: string, updates: Partial<Ticket>, files?: File[]) => void;
+  addUser: (user: Omit<User, 'id' | 'avatar'>) => void;
+  addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>) => void;
+  addTicketComment: (ticketId: string, content: string, isInternal: boolean, file: File | null) => void;
+  updateTicket: (id: string, updates: Partial<Ticket>) => void;
   deleteTicket: (id: string) => void;
-  addTicketComment: (ticketId: string, content: string, isInternal: boolean, file?: File | null) => void;
-  addUser: (user: Omit<UserDetails, 'id' | 'createdAt'>) => void;
-  updateUser: (id: string, updates: Partial<UserDetails>) => void;
+  deleteAttachment: (ticketId: string, attachmentId: string) => void;
+  assignTicket: (ticketId: string, assigneeId: string) => void;
+  updateUser: (id: string, updates: Partial<User>) => void;
   deleteUser: (id: string) => void;
-  addDepartment: (department: Omit<Department, 'id' | 'createdAt'>) => void;
+  addDepartment: (department: Omit<Department, 'id'>) => void;
   updateDepartment: (id: string, updates: Partial<Department>) => void;
   deleteDepartment: (id: string) => void;
-  getTicketStatsCounts: () => { 
-    open: number; 
-    urgent: number; 
-    resolvedToday: number;
-    statusCounts: Record<TicketStatus, number>;
-    priorityCounts: Record<TicketPriority, number>;
-  };
-  assignTicket: (ticketId: string, userId: string) => void;
-  getMyTickets: () => Ticket[];
-  getAssignedToMeTickets: () => Ticket[];
-  getOpenTickets: () => Ticket[];
-  getClosedTickets: () => Ticket[];
-  getUserById: (id: string) => UserDetails | undefined;
-  deleteAttachment: (ticketId: string, attachmentId: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
-  const [users, setUsers] = useState<UserDetails[]>(mockUsers);
+// Generate a simple unique ID
+const generateId = () => uuidv4();
+
+// Initial data - replace with API calls later
+const initialUsers: User[] = [
+  {
+    id: generateId(),
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    role: 'admin',
+    department: 'IT',
+    avatar: 'https://api.dicebear.com/7.x/lorelei/svg?seed=John',
+  },
+  {
+    id: generateId(),
+    name: 'Alice Smith',
+    email: 'alice.smith@example.com',
+    role: 'faculty',
+    department: 'Registrar',
+    avatar: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Alice',
+  },
+  {
+    id: generateId(),
+    name: 'Bob Williams',
+    email: 'bob.williams@example.com',
+    role: 'student',
+    department: 'Student Services',
+    avatar: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Bob',
+  },
+];
+
+const initialDepartments: Department[] = [
+  { id: generateId(), name: 'IT' },
+  { id: generateId(), name: 'Registrar' },
+  { id: generateId(), name: 'Finance' },
+  { id: generateId(), name: 'Student Services' },
+  { id: generateId(), name: 'Academic Affairs' },
+];
+
+const initialTickets: Ticket[] = [
+  {
+    id: generateId(),
+    title: 'Password Reset Request',
+    description: 'I need help resetting my password. I have forgotten it and cannot log in.',
+    status: 'open',
+    priority: 'high',
+    createdBy: initialUsers[2].id,
+    creatorName: initialUsers[2].name,
+    creatorAvatar: initialUsers[2].avatar,
+    assignedTo: initialUsers[0].id,
+    assigneeName: initialUsers[0].name,
+    assigneeAvatar: initialUsers[0].avatar,
+    department: 'IT',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    comments: [
+      {
+        id: generateId(),
+        content: 'We are looking into it',
+        userName: initialUsers[0].name,
+        userAvatar: initialUsers[0].avatar,
+        userRole: initialUsers[0].role,
+        createdAt: new Date().toISOString(),
+        isInternal: false
+      }
+    ],
+    attachments: []
+  },
+  {
+    id: generateId(),
+    title: 'Enrollment Issues',
+    description: 'I am having trouble enrolling in classes for the upcoming semester.',
+    status: 'in_progress',
+    priority: 'medium',
+    createdBy: initialUsers[2].id,
+    creatorName: initialUsers[2].name,
+    creatorAvatar: initialUsers[2].avatar,
+    assignedTo: initialUsers[1].id,
+    assigneeName: initialUsers[1].name,
+    assigneeAvatar: initialUsers[1].avatar,
+    department: 'Registrar',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    comments: [],
+    attachments: []
+  },
+  {
+    id: generateId(),
+    title: 'Financial Aid Inquiry',
+    description: 'I have a question about my financial aid package. Can someone assist me?',
+    status: 'resolved',
+    priority: 'low',
+    createdBy: initialUsers[2].id,
+    creatorName: initialUsers[2].name,
+    creatorAvatar: initialUsers[2].avatar,
+    assignedTo: initialUsers[0].id,
+    assigneeName: initialUsers[0].name,
+    assigneeAvatar: initialUsers[0].avatar,
+    department: 'Finance',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    comments: [],
+    attachments: []
+  },
+];
+
+export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const { user } = useAuth();
 
-  // Helper function to convert File objects to FileAttachment
-  const processFiles = (files: File[], ticketId: string): FileAttachment[] => {
-    if (!files || files.length === 0) return [];
-    if (!user) return [];
-    
-    return files.map(file => {
-      const fileType = file.type as 'image/jpeg' | 'image/png' | 'application/pdf';
-      
-      // Create object URL for preview
-      const fileUrl = URL.createObjectURL(file);
-      
-      return {
-        id: `attachment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        ticketId: ticketId,
-        filename: file.name,
-        fileType: fileType,
-        fileUrl: fileUrl,
-        fileSize: file.size,
-        uploadedBy: user.id,
-        uploadedAt: new Date().toISOString()
-      };
-    });
-  };
+  useEffect(() => {
+    // Load data from local storage on component mount
+    const storedUsers = localStorage.getItem('users');
+    if (storedUsers) {
+      setUsers(JSON.parse(storedUsers));
+    }
 
-  // Process a single file for a comment
-  const processCommentFile = (file: File | null): FileAttachment | undefined => {
-    if (!file || !user) return undefined;
-    
-    const fileType = file.type as 'image/jpeg' | 'image/png' | 'application/pdf';
-    
-    // Create object URL for preview
-    const fileUrl = URL.createObjectURL(file);
-    
-    return {
-      id: `attachment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      ticketId: '',  // Will be set when attached to a ticket
-      filename: file.name,
-      fileType: fileType,
-      fileUrl: fileUrl,
-      fileSize: file.size,
-      uploadedBy: user.id,
-      uploadedAt: new Date().toISOString()
+    const storedTickets = localStorage.getItem('tickets');
+    if (storedTickets) {
+      setTickets(JSON.parse(storedTickets));
+    }
+
+    const storedDepartments = localStorage.getItem('departments');
+    if (storedDepartments) {
+      setDepartments(JSON.parse(storedDepartments));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Save data to local storage whenever it changes
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('tickets', JSON.stringify(tickets));
+    localStorage.setItem('departments', JSON.stringify(departments));
+  }, [users, tickets, departments]);
+
+  const addUser = (user: Omit<User, 'id' | 'avatar'>) => {
+    const newUser: User = {
+      id: generateId(),
+      ...user,
+      avatar: `https://api.dicebear.com/7.x/lorelei/svg?seed=${user.name}`,
     };
+    setUsers(prev => [...prev, newUser]);
   };
 
-  // Add a new ticket
-  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>, files: File[] = []) => {
-    const ticketId = `ticket-${Date.now()}`;
-    
-    const newAttachments = processFiles(files, ticketId);
-    
+  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments' | 'attachments'>) => {
+    if (!user) return;
+
     const newTicket: Ticket = {
+      id: generateId(),
       ...ticket,
-      id: ticketId,
+      createdBy: user.id,
+      creatorName: user.name,
+      creatorAvatar: user.avatar,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       comments: [],
-      attachments: newAttachments,
+      attachments: []
     };
-    
-    setTickets(prev => [newTicket, ...prev]);
-    toast.success("Ticket created successfully");
-    return newTicket;
+    setTickets(prev => [...prev, newTicket]);
   };
 
-  // Update an existing ticket
-  const updateTicket = (id: string, updates: Partial<Ticket>, files: File[] = []) => {
-    setTickets(prev => 
-      prev.map(ticket => {
-        if (ticket.id === id) {
-          // Process new attachments if any
-          const newAttachments = processFiles(files, id);
-          
-          return { 
-            ...ticket, 
-            ...updates, 
-            updatedAt: new Date().toISOString(),
-            attachments: [
-              ...(ticket.attachments || []),
-              ...newAttachments
-            ]
-          };
-        }
-        return ticket;
-      })
-    );
-    toast.success("Ticket updated successfully");
-  };
-
-  // Delete attachment from a ticket
-  const deleteAttachment = (ticketId: string, attachmentId: string) => {
-    setTickets(prev => 
-      prev.map(ticket => {
-        if (ticket.id === ticketId && ticket.attachments) {
-          // Find the attachment to revoke its URL
-          const attachmentToDelete = ticket.attachments.find(a => a.id === attachmentId);
-          if (attachmentToDelete && attachmentToDelete.fileUrl) {
-            URL.revokeObjectURL(attachmentToDelete.fileUrl);
-          }
-          
-          return {
-            ...ticket,
-            attachments: ticket.attachments.filter(a => a.id !== attachmentId)
-          };
-        }
-        return ticket;
-      })
-    );
-    toast.success("Attachment deleted successfully");
-  };
-
-  // Delete a ticket
-  const deleteTicket = (id: string) => {
-    // Find ticket to clean up any attachment URLs before removing
-    const ticketToDelete = tickets.find(t => t.id === id);
-    if (ticketToDelete && ticketToDelete.attachments) {
-      ticketToDelete.attachments.forEach(attachment => {
-        if (attachment.fileUrl) {
-          URL.revokeObjectURL(attachment.fileUrl);
-        }
-      });
-    }
-    
-    setTickets(prev => prev.filter(ticket => ticket.id !== id));
-    toast.success("Ticket deleted successfully");
-  };
-
-  // Add comment to a ticket with optional file attachment
-  const addTicketComment = (ticketId: string, content: string, isInternal: boolean, file?: File | null) => {
+  const addTicketComment = (ticketId: string, content: string, isInternal: boolean, file: File | null) => {
     if (!user) return;
-    
-    // Process the attachment if provided
-    const attachment = file ? processCommentFile(file) : undefined;
-    
-    const comment: TicketComment = {
-      id: `comment-${Date.now()}`,
-      ticketId,
-      userId: user.id,
-      userName: user.name,
-      userRole: user.role,
-      userAvatar: user.avatar,
+
+    const newComment: TicketComment = {
+      id: generateId(),
       content,
+      userName: user.name,
+      userAvatar: user.avatar,
+      userRole: user.role,
       createdAt: new Date().toISOString(),
       isInternal,
-      attachment,  // Add the attachment to the comment
+      attachment: file ? {
+        id: generateId(),
+        filename: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        fileUrl: URL.createObjectURL(file)
+      } : undefined
     };
-    
-    setTickets(prev => 
-      prev.map(ticket => 
-        ticket.id === ticketId 
-          ? { 
-              ...ticket, 
-              comments: [...ticket.comments, comment],
-              updatedAt: new Date().toISOString(),
-            } 
-          : ticket
-      )
-    );
+
+    setTickets(prev => prev.map(ticket => {
+      if (ticket.id === ticketId) {
+        return {
+          ...ticket,
+          comments: [...ticket.comments, newComment],
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return ticket;
+    }));
   };
 
-  // User management
-  const addUser = (userData: Omit<UserDetails, 'id' | 'createdAt'>) => {
-    const newUser: UserDetails = {
-      ...userData,
-      id: `user-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    
-    setUsers(prev => [...prev, newUser]);
-    toast.success("User added successfully");
+  const updateTicket = (id: string, updates: Partial<Ticket>) => {
+    setTickets(prev => prev.map(ticket => {
+      if (ticket.id === id) {
+        const updatedTicket = { ...ticket, ...updates, updatedAt: new Date().toISOString() };
+        
+        // Check if assignment changed for manual routing tracking
+        if (updates.assignedTo !== undefined && updates.assignedTo !== ticket.assignedTo) {
+          const oldAssignee = ticket.assigneeName || 'No one';
+          const newAssignee = updates.assigneeName || users.find(u => u.id === updates.assignedTo)?.name || 'No one';
+          const department = updates.department || ticket.department || 'Unknown';
+          
+          // Add internal note for manual routing
+          if (updates.assignedTo !== ticket.assignedTo) {
+            const routingNote = `Ticket was manually routed to department: ${department}, assignee: ${newAssignee}.`;
+            const internalComment: TicketComment = {
+              id: generateId(),
+              content: routingNote,
+              userName: 'System',
+              userAvatar: '',
+              userRole: 'admin',
+              createdAt: new Date().toISOString(),
+              isInternal: true
+            };
+            
+            updatedTicket.comments = [...updatedTicket.comments, internalComment];
+          }
+        }
+        
+        return updatedTicket;
+      }
+      return ticket;
+    }));
   };
 
-  const updateUser = (id: string, updates: Partial<UserDetails>) => {
-    setUsers(prev => 
-      prev.map(user => 
-        user.id === id 
-          ? { ...user, ...updates } 
-          : user
-      )
-    );
-    toast.success("User updated successfully");
+  const assignTicket = (ticketId: string, assigneeId: string) => {
+    const assignee = users.find(u => u.id === assigneeId);
+    if (!assignee) return;
+    
+    setTickets(prev => prev.map(ticket => {
+      if (ticket.id === ticketId) {
+        const oldAssignee = ticket.assigneeName || 'No one';
+        const newAssignee = assignee.name;
+        const department = assignee.department || ticket.department || 'Unknown';
+        
+        // Create internal note for assignment tracking
+        const assignmentNote = `Ticket was manually routed to department: ${department}, assignee: ${newAssignee}.`;
+        const internalComment: TicketComment = {
+          id: generateId(),
+          content: assignmentNote,
+          userName: 'System',
+          userAvatar: '',
+          userRole: 'admin',
+          createdAt: new Date().toISOString(),
+          isInternal: true
+        };
+        
+        return {
+          ...ticket,
+          assignedTo: assignee.id,
+          assigneeName: assignee.name,
+          assigneeAvatar: assignee.avatar,
+          department: assignee.department,
+          status: 'in_progress' as TicketStatus,
+          updatedAt: new Date().toISOString(),
+          comments: [...ticket.comments, internalComment]
+        };
+      }
+      return ticket;
+    }));
+  };
+
+  const deleteTicket = (id: string) => {
+    setTickets(prev => prev.filter(ticket => ticket.id !== id));
+  };
+
+  const deleteAttachment = (ticketId: string, attachmentId: string) => {
+    setTickets(prev => prev.map(ticket => {
+      if (ticket.id === ticketId) {
+        return {
+          ...ticket,
+          attachments: ticket.attachments.filter(attachment => attachment.id !== attachmentId),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return ticket;
+    }));
+  };
+
+  const updateUser = (id: string, updates: Partial<User>) => {
+    setUsers(prev => prev.map(user =>
+      user.id === id ? { ...user, ...updates } : user
+    ));
   };
 
   const deleteUser = (id: string) => {
     setUsers(prev => prev.filter(user => user.id !== id));
-    toast.success("User deleted successfully");
   };
 
-  // Department management
-  const addDepartment = (departmentData: Omit<Department, 'id' | 'createdAt'>) => {
+  const addDepartment = (department: Omit<Department, 'id'>) => {
     const newDepartment: Department = {
-      ...departmentData,
-      id: `department-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      id: generateId(),
+      ...department,
     };
-    
     setDepartments(prev => [...prev, newDepartment]);
-    toast.success("Department added successfully");
   };
 
   const updateDepartment = (id: string, updates: Partial<Department>) => {
-    setDepartments(prev => 
-      prev.map(dept => 
-        dept.id === id 
-          ? { ...dept, ...updates } 
-          : dept
-      )
-    );
-    toast.success("Department updated successfully");
+    setDepartments(prev => prev.map(department =>
+      department.id === id ? { ...department, ...updates } : department
+    ));
   };
 
   const deleteDepartment = (id: string) => {
-    setDepartments(prev => prev.filter(dept => dept.id !== id));
-    toast.success("Department deleted successfully");
+    setDepartments(prev => prev.filter(department => department.id !== id));
   };
-
-  // Get ticket statistics
-  const getTicketStatsCounts = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const open = tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length;
-    const urgent = tickets.filter(t => t.priority === 'urgent' && (t.status === 'open' || t.status === 'in_progress')).length;
-    const resolvedToday = tickets.filter(t => {
-      const updatedDate = new Date(t.updatedAt);
-      updatedDate.setHours(0, 0, 0, 0);
-      return t.status === 'resolved' && updatedDate.getTime() === today.getTime();
-    }).length;
-    
-    // Get counts by status
-    const statusCounts: Record<TicketStatus, number> = {
-      open: tickets.filter(t => t.status === 'open').length,
-      in_progress: tickets.filter(t => t.status === 'in_progress').length,
-      on_hold: tickets.filter(t => t.status === 'on_hold').length,
-      resolved: tickets.filter(t => t.status === 'resolved').length,
-      closed: tickets.filter(t => t.status === 'closed').length,
-    };
-    
-    // Get counts by priority
-    const priorityCounts: Record<TicketPriority, number> = {
-      low: tickets.filter(t => t.priority === 'low').length,
-      medium: tickets.filter(t => t.priority === 'medium').length,
-      high: tickets.filter(t => t.priority === 'high').length,
-      urgent: tickets.filter(t => t.priority === 'urgent').length,
-    };
-    
-    return { open, urgent, resolvedToday, statusCounts, priorityCounts };
-  };
-
-  // Assign a ticket to a user
-  const assignTicket = (ticketId: string, userId: string) => {
-    const assignee = users.find(u => u.id === userId);
-    
-    if (assignee) {
-      updateTicket(ticketId, {
-        assignedTo: assignee.id,
-        assigneeName: assignee.name,
-        assigneeAvatar: assignee.avatar,
-        status: 'in_progress'
-      });
-    }
-  };
-
-  // Get tickets created by the current user
-  const getMyTickets = () => {
-    if (!user) return [];
-    return tickets.filter(ticket => ticket.createdBy === user.id);
-  };
-
-  // Get tickets assigned to the current user
-  const getAssignedToMeTickets = () => {
-    if (!user) return [];
-    return tickets.filter(ticket => ticket.assignedTo === user.id);
-  };
-
-  // Get all open tickets (for admins)
-  const getOpenTickets = () => {
-    return tickets.filter(ticket => ticket.status === 'open' || ticket.status === 'in_progress');
-  };
-
-  // Get all closed tickets (for admins)
-  const getClosedTickets = () => {
-    return tickets.filter(ticket => ticket.status === 'closed' || ticket.status === 'resolved');
-  };
-
-  // Get user by ID
-  const getUserById = (id: string) => {
-    return users.find(user => user.id === id);
-  };
-
-  // Clean up object URLs when component unmounts
-  useEffect(() => {
-    return () => {
-      tickets.forEach(ticket => {
-        // Clean up ticket attachments
-        if (ticket.attachments) {
-          ticket.attachments.forEach(attachment => {
-            if (attachment.fileUrl) {
-              URL.revokeObjectURL(attachment.fileUrl);
-            }
-          });
-        }
-        
-        // Clean up comment attachments
-        ticket.comments.forEach(comment => {
-          if (comment.attachment?.fileUrl) {
-            URL.revokeObjectURL(comment.attachment.fileUrl);
-          }
-        });
-      });
-    };
-  }, []);
 
   return (
     <DataContext.Provider value={{
+      users,
       tickets,
       departments,
-      users,
+      addUser,
       addTicket,
+      addTicketComment,
       updateTicket,
       deleteTicket,
-      addTicketComment,
-      addUser,
+      deleteAttachment,
+      assignTicket,
       updateUser,
       deleteUser,
       addDepartment,
       updateDepartment,
-      deleteDepartment,
-      getTicketStatsCounts,
-      assignTicket,
-      getMyTickets,
-      getAssignedToMeTickets,
-      getOpenTickets,
-      getClosedTickets,
-      getUserById,
-      deleteAttachment,
+      deleteDepartment
     }}>
       {children}
     </DataContext.Provider>
   );
-}
+};
 
-export function useData() {
+export const useData = () => {
   const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error("useData must be used within a DataProvider");
+  if (!context) {
+    throw new Error('useData must be used within a DataProvider');
   }
   return context;
-}
+};
