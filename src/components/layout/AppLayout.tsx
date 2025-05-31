@@ -26,13 +26,17 @@ const AppLayout = () => {
   
   return (
     <div className="min-h-screen flex w-full bg-background">
-      {/* Sidebar */}
-      <div className="hidden md:flex w-64 bg-red-800 text-white">
-        <div className="flex flex-col w-full">
+      {/* Sidebar - Fixed width and height */}
+      <div className="hidden md:flex w-64 bg-red-800 text-white fixed h-full">
+        <div className="flex flex-col w-full h-full">
           {/* Header */}
           <div className="flex items-center gap-2 px-6 py-4 border-b border-red-700">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-red-800">
-              <span className="text-sm font-bold">KT</span>
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white overflow-hidden">
+              <img 
+                src="https://www.pup.edu.ph/about/images/PUPLogo.png" 
+                alt="PUP Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <span className="font-semibold text-lg">KyusiTix</span>
           </div>
@@ -94,8 +98,8 @@ const AppLayout = () => {
             </Link>
           </nav>
           
-          {/* Footer */}
-          <div className="border-t border-red-700 p-4 space-y-2">
+          {/* Footer - Always at bottom */}
+          <div className="border-t border-red-700 p-4 space-y-2 mt-auto">
             <Link 
               to="/profile" 
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
@@ -116,8 +120,8 @@ const AppLayout = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content - Adjusted to account for fixed sidebar */}
+      <div className="flex-1 flex flex-col md:ml-64">
         {/* Top Header */}
         <div className="bg-white border-b px-6 py-3">
           <div className="flex items-center justify-end">
@@ -135,7 +139,7 @@ const AppLayout = () => {
         </div>
         
         {/* Page Content */}
-        <div className="flex-1 p-4 md:p-6">
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
           <React.Suspense fallback={<p>Loading...</p>}>
             <div className="w-full">
               <Outlet />
