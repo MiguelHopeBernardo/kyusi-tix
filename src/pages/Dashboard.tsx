@@ -1,5 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { 
   Card, 
   CardContent, 
@@ -17,6 +17,12 @@ import { Ticket, TicketStatus } from '@/models';
 const Dashboard = () => {
   const { tickets } = useData();
   const { user } = useAuth();
+  
+  // Redirect non-admin users to tickets page
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/tickets" replace />;
+  }
+
   const [statusData, setStatusData] = useState<{ name: string, value: number, color: string }[]>([]);
   const [openCount, setOpenCount] = useState(0);
   const [urgentCount, setUrgentCount] = useState(0);
@@ -29,8 +35,6 @@ const Dashboard = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
   useEffect(() => {
-    if (!user || user?.role !== 'admin') return; // Only for admin users
-    
     // Calculate status data for pie chart
     const statusCounts: Record<string, number> = {};
     tickets.forEach(ticket => {
@@ -81,18 +85,6 @@ const Dashboard = () => {
     setSelectedTicket(ticket);
     setIsTicketDetailsOpen(true);
   };
-
-  // Only allow admin users to access dashboard
-  if (!user || user?.role !== 'admin') {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">You don't have permission to view the dashboard.</p>
-        </div>
-      </div>
-    );
-  }
 
   // Admin Dashboard
   return (

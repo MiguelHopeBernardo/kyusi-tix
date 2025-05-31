@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send } from 'lucide-react';
+import { toast } from "@/components/ui/sonner";
 
 interface Message {
   id: string;
@@ -13,27 +14,6 @@ interface Message {
   sender: 'user' | 'assistant';
   timestamp: Date;
 }
-
-const GEMINI_API_KEY = 'AIzaSyCN4jVFK_RS4wX6w3kujYJU5HvHxsDsoYs';
-
-const PUPQC_CONTEXT = `You are KyusiChat, the official AI assistant for Polytechnic University of the Philippines - Quezon City (PUPQC). 
-
-IMPORTANT INSTRUCTIONS:
-- Only answer questions related to PUP Quezon City (PUPQC)
-- If a question is not related to PUPQC, politely redirect the conversation back to PUPQC topics
-- Provide accurate, helpful information about PUPQC services, programs, enrollment, admissions, etc.
-- Be friendly but professional
-- Keep responses concise and informative
-
-PUPQC KNOWLEDGE BASE:
-- Location: San Bartolome, Novaliches, Quezon City
-- Contact: (02) 8287-1717, info@pup.edu.ph, www.pup.edu.ph
-- Programs: BS Information Technology, BS Business Administration, BS Accountancy, BS Elementary Education, BS Secondary Education, BS Entrepreneurship, and more
-- Admission: PUPCET (PUP College Entrance Test) required, applications usually January-February
-- Tuition: PHP 1,000-1,500 per semester (very affordable state university)
-- Requirements: Form 138, Good Moral Certificate, Birth Certificate, 2x2 photos, Entrance Exam Results
-- Services: Student Information System (SIS) for grades and schedules, various scholarship programs
-- Events: University Week, Foundation Day, departmental seminars, sports festivals, cultural shows`;
 
 const KyusiChat = () => {
   const { user } = useAuth();
@@ -54,36 +34,42 @@ const KyusiChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const callGeminiAPI = async (userMessage: string): Promise<string> => {
+  const callChatAPI = async (userMessage: string): Promise<string> => {
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+      console.log('Sending message to Django backend:', userMessage);
+      
+      const response = await fetch('http://127.0.0.1:8000/chat/ask/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `${PUPQC_CONTEXT}\n\nUser question: ${userMessage}`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
+          message: userMessage,
+          user_id: user?.id
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from Gemini API');
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment before asking another question.');
+        }
+        throw new Error('Failed to get response from chat service');
       }
 
       const data = await response.json();
-      return data.candidates[0]?.content?.parts[0]?.text || 'I apologize, but I\'m having trouble processing your request. Please try asking about PUPQC enrollment, programs, or other university services.';
+      console.log('Response from Django backend:', data);
+      
+      return data.response || 'I apologize, but I\'m having trouble processing your request. Please try asking about PUPQC enrollment, programs, or other university services.';
     } catch (error) {
-      console.error('Gemini API error:', error);
+      console.error('Chat API error:', error);
+      
+      if (error instanceof Error) {
+        return error.message.includes('Rate limit') 
+          ? error.message
+          : 'I\'m currently experiencing technical difficulties. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or visit www.pup.edu.ph.';
+      }
+      
       return 'I\'m currently experiencing technical difficulties. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or visit www.pup.edu.ph.';
     }
   };
@@ -102,12 +88,13 @@ const KyusiChat = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsTyping(true);
     
     try {
-      // Get AI response from Gemini
-      const aiResponse = await callGeminiAPI(input);
+      // Get AI response from Django backend
+      const aiResponse = await callChatAPI(currentInput);
       
       const aiMessage: Message = {
         id: `assistant-${Date.now()}`,
