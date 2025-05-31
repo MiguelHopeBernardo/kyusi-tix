@@ -13,18 +13,6 @@ import {
   MessageSquare,
   ArrowLeftFromLine,
 } from 'lucide-react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 
 const AppLayout = () => {
   const { user, logout } = useAuth();
@@ -36,105 +24,108 @@ const AppLayout = () => {
   };
   
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <Sidebar collapsible="icon" className="hidden md:flex">
-          <SidebarHeader>
-            <div className="flex items-center gap-2 px-4 py-2">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-sm font-bold">KT</span>
-              </div>
-              <span className="font-semibold text-lg">KyusiTix</span>
+    <div className="min-h-screen flex w-full bg-background">
+      {/* Sidebar */}
+      <div className="hidden md:flex w-64 bg-card border-r">
+        <div className="flex flex-col w-full">
+          {/* Header */}
+          <div className="flex items-center gap-2 px-6 py-4 border-b">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <span className="text-sm font-bold">KT</span>
             </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/dashboard" className="flex items-center gap-2">
-                        <LayoutDashboard className="size-4" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/tickets" className="flex items-center gap-2">
-                        <Ticket className="size-4" />
-                        <span>Tickets</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  {user?.role === 'admin' && (
-                    <>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                          <Link to="/users" className="flex items-center gap-2">
-                            <Users className="size-4" />
-                            <span>Users</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                          <Link to="/departments" className="flex items-center gap-2">
-                            <Building className="size-4" />
-                            <span>Departments</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                          <Link to="/logs" className="flex items-center gap-2">
-                            <FileText className="size-4" />
-                            <span>Activity Logs</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </>
-                  )}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/chat" className="flex items-center gap-2">
-                        <MessageSquare className="size-4" />
-                        <span>KyusiChat</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter>
-            <div className="flex items-center gap-2 px-4 py-3">
+            <span className="font-semibold text-lg">KyusiTix</span>
+          </div>
+          
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-4 space-y-2">
+            <Link 
+              to="/dashboard" 
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <LayoutDashboard className="size-4" />
+              Dashboard
+            </Link>
+            
+            <Link 
+              to="/tickets" 
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Ticket className="size-4" />
+              Tickets
+            </Link>
+            
+            {user?.role === 'admin' && (
+              <>
+                <Link 
+                  to="/users" 
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <Users className="size-4" />
+                  Users
+                </Link>
+                
+                <Link 
+                  to="/departments" 
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <Building className="size-4" />
+                  Departments
+                </Link>
+                
+                <Link 
+                  to="/logs" 
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <FileText className="size-4" />
+                  Activity Logs
+                </Link>
+              </>
+            )}
+            
+            <Link 
+              to="/chat" 
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <MessageSquare className="size-4" />
+              KyusiChat
+            </Link>
+          </nav>
+          
+          {/* Footer */}
+          <div className="border-t p-4">
+            <div className="flex items-center gap-3">
               <Avatar className="size-8">
                 <AvatarImage src={user?.avatar || ""} alt={user?.name || "Avatar"} />
                 <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-0.5 flex-1">
                 <span className="text-sm font-semibold">{user?.name}</span>
-                <Button variant="link" size="sm" onClick={handleLogout} className="p-0 hover:underline">
-                  <ArrowLeftFromLine className="mr-2 size-4" />
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  onClick={handleLogout} 
+                  className="p-0 h-auto justify-start hover:underline text-xs text-muted-foreground"
+                >
+                  <ArrowLeftFromLine className="mr-1 size-3" />
                   Logout
                 </Button>
               </div>
             </div>
-          </SidebarFooter>
-        </Sidebar>
-
-        <div className="flex-1">
-          <div className="p-4 md:p-6">
-            <React.Suspense fallback={<p>Loading...</p>}>
-              <div className="w-full">
-                <Outlet />
-              </div>
-            </React.Suspense>
           </div>
         </div>
       </div>
-    </SidebarProvider>
+
+      {/* Main Content */}
+      <div className="flex-1">
+        <div className="p-4 md:p-6">
+          <React.Suspense fallback={<p>Loading...</p>}>
+            <div className="w-full">
+              <Outlet />
+            </div>
+          </React.Suspense>
+        </div>
+      </div>
+    </div>
   );
 };
 

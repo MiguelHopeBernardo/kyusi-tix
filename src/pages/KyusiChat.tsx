@@ -14,30 +14,33 @@ interface Message {
   timestamp: Date;
 }
 
-// Mock responses based on keywords
-const mockResponses: Record<string, string> = {
-  'hello': 'Hello! How can I assist you with your inquiries about PUP Quezon City today?',
-  'hi': 'Hi there! I\'m KyusiChat, your PUPQC virtual assistant. How may I help you?',
-  'enroll': 'To enroll at PUP Quezon City, you need to follow these steps:\n\n1. Check the official PUP website for enrollment schedules\n2. Complete the online registration form\n3. Submit required documents\n4. Pay the enrollment fee\n5. Attend the orientation\n\nFor more details, visit the official PUP website or contact the registrar\'s office.',
-  'admission': 'The admission process for PUP Quezon City involves taking the PUPCET (PUP College Entrance Test). Applications usually start around January to February each year. Visit the official PUP website for the exact dates and requirements.',
-  'schedule': 'Class schedules are released after the enrollment period. You can check your schedule through the PUP Student Information System (SIS) using your student credentials.',
-  'requirements': 'General requirements for admission include:\n- Form 138 (High School Report Card)\n- Certificate of Good Moral Character\n- Birth Certificate\n- 2x2 ID pictures\n- Entrance Exam Results\n\nSpecific programs may have additional requirements.',
-  'tuition': 'PUP is one of the most affordable state universities in the Philippines. Tuition fees range from approximately PHP 1,000 to PHP 1,500 per semester, depending on your program. There are also miscellaneous fees for various services.',
-  'location': 'PUP Quezon City is located at San Bartolome, Novaliches, Quezon City. It\'s accessible via Commonwealth Avenue and several public transportation routes.',
-  'programs': 'PUP Quezon City offers various undergraduate programs including:\n- BS Information Technology\n- BS Business Administration\n- BS Accountancy\n- BS Elementary Education\n- BS Secondary Education\n- BS Entrepreneurship\nand many more.',
-  'contact': 'You can contact PUP Quezon City through:\nPhone: (02) 8287-1717\nEmail: info@pup.edu.ph\nWebsite: www.pup.edu.ph',
-  'events': 'PUP Quezon City hosts various events throughout the academic year including University Week, Foundation Day celebrations, departmental seminars, sports festivals, and cultural shows. Check the official PUP social media pages for updates.',
-  'grades': 'You can check your grades through the PUP Student Information System (SIS). Log in with your student credentials and navigate to the grades section.',
-  'scholarship': 'PUP offers various scholarship programs including:\n- Academic Scholars\n- Non-Academic Scholars (sports, cultural)\n- Government Scholarship Programs (CHED, DOST)\n- Private Scholarship Programs\nVisit the Office of Student Services for more information.',
-  'default': 'I don\'t have specific information about that. For accurate details, please visit the official PUP website at www.pup.edu.ph or contact the university directly.'
-};
+const GEMINI_API_KEY = 'AIzaSyCN4jVFK_RS4wX6w3kujYJU5HvHxsDsoYs';
+
+const PUPQC_CONTEXT = `You are KyusiChat, the official AI assistant for Polytechnic University of the Philippines - Quezon City (PUPQC). 
+
+IMPORTANT INSTRUCTIONS:
+- Only answer questions related to PUP Quezon City (PUPQC)
+- If a question is not related to PUPQC, politely redirect the conversation back to PUPQC topics
+- Provide accurate, helpful information about PUPQC services, programs, enrollment, admissions, etc.
+- Be friendly but professional
+- Keep responses concise and informative
+
+PUPQC KNOWLEDGE BASE:
+- Location: San Bartolome, Novaliches, Quezon City
+- Contact: (02) 8287-1717, info@pup.edu.ph, www.pup.edu.ph
+- Programs: BS Information Technology, BS Business Administration, BS Accountancy, BS Elementary Education, BS Secondary Education, BS Entrepreneurship, and more
+- Admission: PUPCET (PUP College Entrance Test) required, applications usually January-February
+- Tuition: PHP 1,000-1,500 per semester (very affordable state university)
+- Requirements: Form 138, Good Moral Certificate, Birth Certificate, 2x2 photos, Entrance Exam Results
+- Services: Student Information System (SIS) for grades and schedules, various scholarship programs
+- Events: University Week, Foundation Day, departmental seminars, sports festivals, cultural shows`;
 
 const KyusiChat = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hello! I\'m KyusiChat, your PUPQC virtual assistant. How may I help you today?',
+      content: 'Hello! I\'m KyusiChat, your PUPQC virtual assistant. How may I help you with your inquiries about PUP Quezon City today?',
       sender: 'assistant',
       timestamp: new Date(),
     },
@@ -51,7 +54,41 @@ const KyusiChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const handleSendMessage = (e: React.FormEvent) => {
+  const callGeminiAPI = async (userMessage: string): Promise<string> => {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `${PUPQC_CONTEXT}\n\nUser question: ${userMessage}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from Gemini API');
+      }
+
+      const data = await response.json();
+      return data.candidates[0]?.content?.parts[0]?.text || 'I apologize, but I\'m having trouble processing your request. Please try asking about PUPQC enrollment, programs, or other university services.';
+    } catch (error) {
+      console.error('Gemini API error:', error);
+      return 'I\'m currently experiencing technical difficulties. For immediate assistance, please contact PUPQC directly at (02) 8287-1717 or visit www.pup.edu.ph.';
+    }
+  };
+  
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!input.trim()) return;
@@ -68,29 +105,30 @@ const KyusiChat = () => {
     setInput('');
     setIsTyping(true);
     
-    // Simulate AI typing
-    setTimeout(() => {
-      // Generate response based on keywords
-      let responseContent = mockResponses.default;
-      
-      const lowerInput = input.toLowerCase();
-      for (const [keyword, response] of Object.entries(mockResponses)) {
-        if (lowerInput.includes(keyword)) {
-          responseContent = response;
-          break;
-        }
-      }
+    try {
+      // Get AI response from Gemini
+      const aiResponse = await callGeminiAPI(input);
       
       const aiMessage: Message = {
         id: `assistant-${Date.now()}`,
-        content: responseContent,
+        content: aiResponse,
         sender: 'assistant',
         timestamp: new Date(),
       };
       
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        content: 'I apologize for the technical difficulty. Please try again or contact PUPQC directly for assistance.',
+        sender: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
   
   return (
@@ -99,7 +137,7 @@ const KyusiChat = () => {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">KyusiChat</h2>
           <p className="text-muted-foreground">
-            PUPQC AI Assistant for FAQs
+            PUPQC AI Assistant powered by Gemini
           </p>
         </div>
       </div>
@@ -185,7 +223,7 @@ const KyusiChat = () => {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask KyusiChat a question..."
+              placeholder="Ask about PUPQC enrollment, programs, admissions..."
               className="flex-1"
               disabled={isTyping}
             />
@@ -195,7 +233,7 @@ const KyusiChat = () => {
             </Button>
           </form>
           <div className="mt-2 text-xs text-muted-foreground">
-            Try asking about: enrollment, admission, programs, scholarships, tuition fees
+            Ask about: enrollment, admission, programs, scholarships, tuition fees, campus location
           </div>
         </div>
       </Card>
