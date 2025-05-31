@@ -73,6 +73,9 @@ const Tickets = () => {
     toast.success("Tickets exported successfully");
   };
   
+  // Check if user can see assigned tickets (admin, faculty, staff)
+  const canViewAssignedTickets = user?.role && ['admin', 'faculty', 'staff'].includes(user.role);
+  
   // Only show tabs that are relevant to the user's role
   const renderTabs = () => {
     const isAdmin = user?.role === 'admin';
@@ -86,11 +89,18 @@ const Tickets = () => {
           <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
         </TabsList>
       );
-    } else {
+    } else if (canViewAssignedTickets) {
       return (
         <TabsList className="grid grid-cols-2">
           <TabsTrigger value="my">My Tickets</TabsTrigger>
           <TabsTrigger value="assigned">Assigned To Me</TabsTrigger>
+        </TabsList>
+      );
+    } else {
+      // For students and alumni - only show "My Tickets"
+      return (
+        <TabsList className="grid grid-cols-1">
+          <TabsTrigger value="my">My Tickets</TabsTrigger>
         </TabsList>
       );
     }
@@ -103,28 +113,45 @@ const Tickets = () => {
     const myTickets = getMyTickets();
     const assignedTickets = getAssignedToMeTickets();
     
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm font-medium">My Tickets</p>
-            <p className="text-xs text-muted-foreground">Tickets you've created</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">{assignedTickets.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm font-medium">Assigned To Me</p>
-            <p className="text-xs text-muted-foreground">Tickets requiring your attention</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    if (canViewAssignedTickets) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-medium">My Tickets</p>
+              <p className="text-xs text-muted-foreground">Tickets you've created</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl">{assignedTickets.length}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-medium">Assigned To Me</p>
+              <p className="text-xs text-muted-foreground">Tickets requiring your attention</p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    } else {
+      // For students and alumni - only show "My Tickets" card
+      return (
+        <div className="grid grid-cols-1 gap-6 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-2xl">{myTickets.length}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-medium">My Tickets</p>
+              <p className="text-xs text-muted-foreground">Tickets you've created</p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   };
   
   return (
@@ -188,13 +215,17 @@ const Tickets = () => {
             emptyMessage="You haven't created any tickets"
           />
         </TabsContent>
-        <TabsContent value="assigned" className="mt-6">
-          <TicketTable 
-            tickets={getAssignedToMeTickets()}
-            onViewTicket={handleViewTicket}
-            emptyMessage="No tickets assigned to you"
-          />
-        </TabsContent>
+        
+        {/* Assigned to me tab - only for admin, faculty, and staff */}
+        {canViewAssignedTickets && (
+          <TabsContent value="assigned" className="mt-6">
+            <TicketTable 
+              tickets={getAssignedToMeTickets()}
+              onViewTicket={handleViewTicket}
+              emptyMessage="No tickets assigned to you"
+            />
+          </TabsContent>
+        )}
       </Tabs>
       
       {/* Ticket creation dialog */}
