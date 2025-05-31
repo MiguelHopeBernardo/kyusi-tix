@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
 import Users from "./pages/Users";
 import Departments from "./pages/Departments";
+import Logs from "./pages/Logs";
 import KyusiChat from "./pages/KyusiChat";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/tickets" element={<Tickets />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/departments" element={<Departments />} />
+                <Route path="/logs" element={<Logs />} />
                 <Route path="/kyusichat" element={<KyusiChat />} />
                 <Route path="/profile" element={<Profile />} />
                 {/* Default redirect for authenticated users */}

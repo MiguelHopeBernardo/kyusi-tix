@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Outlet, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,8 @@ import {
   User,
   LogOut,
   Menu,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -62,6 +64,12 @@ const AppLayout = () => {
         name: 'Departments',
         to: '/departments',
         icon: Settings,
+        roles: ['admin'],
+      },
+      {
+        name: 'System Logs',
+        to: '/logs',
+        icon: FileText,
         roles: ['admin'],
       },
       {
