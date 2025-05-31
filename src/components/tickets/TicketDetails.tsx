@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -31,6 +32,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   const [isRouting, setIsRouting] = useState(false);
   const [commentFile, setCommentFile] = useState<File | null>(null);
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(ticket);
+  const [previousAssignee, setPreviousAssignee] = useState<string | undefined>(ticket?.assignedTo);
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -56,6 +58,11 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   const handleAssign = () => {
     if (!currentTicket) return;
     
+    // Track the previous assignee
+    const previousAssigneeId = currentTicket.assignedTo;
+    const previousAssigneeName = currentTicket.assigneeName;
+    const previousDepartment = currentTicket.department;
+    
     // If unassigned, clear the assignment
     if (selectedAssignee === 'unassigned') {
       updateTicket(currentTicket.id, { 
@@ -63,7 +70,27 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
         assigneeName: undefined,
         assigneeAvatar: undefined
       });
+      
+      // Add internal note for unassignment
+      if (previousAssigneeId && previousAssigneeName) {
+        const unassignNote = `Ticket was manually unassigned from ${previousAssigneeName}.`;
+        addTicketComment(currentTicket.id, unassignNote, true);
+      }
       return;
+    }
+    
+    // Get the new assignee details
+    const newAssignee = users.find(u => u.id === selectedAssignee);
+    if (!newAssignee) return;
+    
+    // Check if this is actually a change
+    const isAssigneeChanged = previousAssigneeId !== selectedAssignee;
+    const isDepartmentChanged = previousDepartment !== newAssignee.department;
+    
+    if (isAssigneeChanged || isDepartmentChanged) {
+      // Add internal note for manual assignment
+      const assignmentNote = `Ticket was manually assigned to department: ${newAssignee.department || 'None'}, assignee: ${newAssignee.name}.`;
+      addTicketComment(currentTicket.id, assignmentNote, true);
     }
     
     assignTicket(currentTicket.id, selectedAssignee);
@@ -218,6 +245,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
     if (ticket) {
       setStatus(ticket.status);
       setSelectedAssignee(ticket.assignedTo || 'unassigned');
+      setPreviousAssignee(ticket.assignedTo);
     }
   }, [ticket]);
   

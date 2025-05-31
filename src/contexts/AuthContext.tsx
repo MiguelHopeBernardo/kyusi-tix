@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "@/components/ui/sonner";
 import { authService } from '@/services/api';
+import { useNavigate } from 'react-router-dom';
 
 // Define roles to match Django choices
 export type UserRole = 'admin' | 'staff' | 'faculty' | 'student' | 'alumni';
@@ -182,16 +183,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Logout function
+  // Logout function with navigation
   const logout = async () => {
     try {
       await authService.logout();
       setUser(null);
       toast.success("Logged out successfully");
+      // Force navigation to login page
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
       setUser(null);
       toast.success("Logged out successfully");
+      // Force navigation to login page even if logout fails
+      window.location.href = '/login';
     }
   };
   
