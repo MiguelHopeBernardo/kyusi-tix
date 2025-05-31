@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useNavigate, Outlet } from 'react-router-dom';
+import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,49 @@ import {
 const AppLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
+
+  const isActive = (path: string) => location.pathname === path;
+
+  const navigationItems = [
+    ...(user?.role === 'admin' ? [{
+      title: 'Dashboard',
+      url: '/dashboard',
+      icon: LayoutDashboard,
+    }] : []),
+    {
+      title: 'Tickets',
+      url: '/tickets',
+      icon: Ticket,
+    },
+    ...(user?.role === 'admin' ? [
+      {
+        title: 'User Roles',
+        url: '/users',
+        icon: Users,
+      },
+      {
+        title: 'Departments',
+        url: '/departments',
+        icon: Building,
+      },
+      {
+        title: 'Activity Logs',
+        url: '/logs',
+        icon: FileText,
+      },
+    ] : []),
+    {
+      title: 'KyusiChat',
+      url: '/chat',
+      icon: MessageSquare,
+    },
+  ];
   
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -43,66 +81,27 @@ const AppLayout = () => {
           
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-2">
-            {user?.role === 'admin' && (
-              <Link 
-                to="/dashboard" 
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+            {navigationItems.map((item) => (
+              <Link
+                key={item.title}
+                to={item.url}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors ${
+                  isActive(item.url) ? 'bg-red-900' : ''
+                }`}
               >
-                <LayoutDashboard className="size-4" />
-                Dashboard
+                <item.icon className="size-4" />
+                {item.title}
               </Link>
-            )}
-            
-            <Link 
-              to="/tickets" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-            >
-              <Ticket className="size-4" />
-              Tickets
-            </Link>
-            
-            {user?.role === 'admin' && (
-              <>
-                <Link 
-                  to="/users" 
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-                >
-                  <Users className="size-4" />
-                  User Roles
-                </Link>
-                
-                <Link 
-                  to="/departments" 
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-                >
-                  <Building className="size-4" />
-                  Departments
-                </Link>
-                
-                <Link 
-                  to="/logs" 
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-                >
-                  <FileText className="size-4" />
-                  Activity Logs
-                </Link>
-              </>
-            )}
-            
-            <Link 
-              to="/chat" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-            >
-              <MessageSquare className="size-4" />
-              KyusiChat
-            </Link>
+            ))}
           </nav>
           
           {/* Footer - Always at bottom */}
           <div className="border-t border-red-700 p-4 space-y-2 mt-auto">
             <Link 
               to="/profile" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors ${
+                isActive('/profile') ? 'bg-red-900' : ''
+              }`}
             >
               <User className="size-4" />
               Profile
@@ -132,7 +131,7 @@ const AppLayout = () => {
               </div>
               <Avatar className="size-8">
                 <AvatarImage src={user?.avatar || ""} alt={user?.name || "Avatar"} />
-                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                <AvatarFallback className="bg-red-600 text-white">{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
             </div>
           </div>
