@@ -29,50 +29,40 @@ const Dashboard = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
   useEffect(() => {
-    if (!user) return; // Safety check
+    if (!user || user?.role !== 'admin') return; // Only for admin users
     
-    // Filter tickets based on user role
-    const userTickets = user?.role === 'admin' 
-      ? tickets 
-      : tickets.filter(ticket => 
-          ticket.createdBy === user?.id || 
-          ticket.assignedTo === user?.id
-        );
+    // Calculate status data for pie chart
+    const statusCounts: Record<string, number> = {};
+    tickets.forEach(ticket => {
+      statusCounts[ticket.status] = (statusCounts[ticket.status] || 0) + 1;
+    });
     
-    // Calculate status data for pie chart (admin only)
-    if (user?.role === 'admin') {
-      const statusCounts: Record<string, number> = {};
-      userTickets.forEach(ticket => {
-        statusCounts[ticket.status] = (statusCounts[ticket.status] || 0) + 1;
-      });
-      
-      const data = Object.entries(statusCounts).map(([status, count], index) => ({
-        name: formatStatus(status as TicketStatus),
-        value: count,
-        color: COLORS[index % COLORS.length]
-      }));
-      
-      setStatusData(data);
-    }
+    const data = Object.entries(statusCounts).map(([status, count], index) => ({
+      name: formatStatus(status as TicketStatus),
+      value: count,
+      color: COLORS[index % COLORS.length]
+    }));
+    
+    setStatusData(data);
     
     // Calculate card metrics
-    setOpenCount(userTickets.filter(ticket => 
+    setOpenCount(tickets.filter(ticket => 
       ['open', 'in_progress'].includes(ticket.status)).length);
     
-    setUrgentCount(userTickets.filter(ticket => 
+    setUrgentCount(tickets.filter(ticket => 
       ticket.priority === 'urgent').length);
     
     // Get tickets resolved today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    setResolvedTodayCount(userTickets.filter(ticket => {
+    setResolvedTodayCount(tickets.filter(ticket => {
       const updatedAt = new Date(ticket.updatedAt);
       return ticket.status === 'resolved' && 
         updatedAt >= today;
     }).length);
     
     // Get recent tickets sorted by creation date (most recent first)
-    const sortedTickets = [...userTickets].sort((a, b) => {
+    const sortedTickets = [...tickets].sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
     
@@ -92,9 +82,16 @@ const Dashboard = () => {
     setIsTicketDetailsOpen(true);
   };
 
-  // IMPORTANT: Move this conditional render after all hooks have been called
-  if (!user) {
-    return null; // Safety check
+  // Only allow admin users to access dashboard
+  if (!user || user?.role !== 'admin') {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You don't have permission to view the dashboard.</p>
+        </div>
+      </div>
+    );
   }
 
   // Admin Dashboard
@@ -107,98 +104,94 @@ const Dashboard = () => {
         </p>
       </div>
       
-      {user?.role === 'admin' && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Ticket Status</CardTitle>
-                <CardDescription>Distribution by status</CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center">
-                <div style={{ width: '100%', height: 200 }}>
-                  {statusData.length > 0 ? (
-                    <ResponsiveContainer>
-                      <PieChart>
-                        <Pie
-                          data={statusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                          label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {statusData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-muted-foreground">
-                      No ticket data available
-                    </div>
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Ticket Status</CardTitle>
+            <CardDescription>Distribution by status</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <div style={{ width: '100%', height: 200 }}>
+              {statusData.length > 0 ? (
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  No ticket data available
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">{openCount}</CardTitle>
-                <CardDescription>Open Tickets</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Tickets that need attention
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">{urgentCount}</CardTitle>
-                <CardDescription>Urgent Tickets</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  High priority issues
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">{resolvedTodayCount}</CardTitle>
-                <CardDescription>Resolved Today</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Issues fixed today
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Tickets</CardTitle>
-              <CardDescription>Latest tickets created in the system</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TicketTable 
-                tickets={recentTickets} 
-                showSearch={false}
-                emptyMessage="No tickets to display"
-                hideActionColumn={false}
-                onViewTicket={handleViewTicket}
-              />
-            </CardContent>
-          </Card>
-        </>
-      )}
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{openCount}</CardTitle>
+            <CardDescription>Open Tickets</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Tickets that need attention
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{urgentCount}</CardTitle>
+            <CardDescription>Urgent Tickets</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              High priority issues
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{resolvedTodayCount}</CardTitle>
+            <CardDescription>Resolved Today</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Issues fixed today
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Tickets</CardTitle>
+          <CardDescription>Latest tickets created in the system</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TicketTable 
+            tickets={recentTickets} 
+            showSearch={false}
+            emptyMessage="No tickets to display"
+            hideActionColumn={false}
+            onViewTicket={handleViewTicket}
+          />
+        </CardContent>
+      </Card>
       
       {/* Ticket Details Modal */}
       <TicketDetails

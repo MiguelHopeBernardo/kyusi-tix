@@ -12,6 +12,7 @@ import {
   FileText,
   MessageSquare,
   ArrowLeftFromLine,
+  User,
 } from 'lucide-react';
 
 const AppLayout = () => {
@@ -26,11 +27,11 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen flex w-full bg-background">
       {/* Sidebar */}
-      <div className="hidden md:flex w-64 bg-card border-r">
+      <div className="hidden md:flex w-64 bg-red-800 text-white">
         <div className="flex flex-col w-full">
           {/* Header */}
-          <div className="flex items-center gap-2 px-6 py-4 border-b">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex items-center gap-2 px-6 py-4 border-b border-red-700">
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-red-800">
               <span className="text-sm font-bold">KT</span>
             </div>
             <span className="font-semibold text-lg">KyusiTix</span>
@@ -38,17 +39,19 @@ const AppLayout = () => {
           
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-2">
-            <Link 
-              to="/dashboard" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <LayoutDashboard className="size-4" />
-              Dashboard
-            </Link>
+            {user?.role === 'admin' && (
+              <Link 
+                to="/dashboard" 
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                <LayoutDashboard className="size-4" />
+                Dashboard
+              </Link>
+            )}
             
             <Link 
               to="/tickets" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
             >
               <Ticket className="size-4" />
               Tickets
@@ -58,15 +61,15 @@ const AppLayout = () => {
               <>
                 <Link 
                   to="/users" 
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                 >
                   <Users className="size-4" />
-                  Users
+                  User Roles
                 </Link>
                 
                 <Link 
                   to="/departments" 
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                 >
                   <Building className="size-4" />
                   Departments
@@ -74,7 +77,7 @@ const AppLayout = () => {
                 
                 <Link 
                   to="/logs" 
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                 >
                   <FileText className="size-4" />
                   Activity Logs
@@ -84,7 +87,7 @@ const AppLayout = () => {
             
             <Link 
               to="/chat" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
             >
               <MessageSquare className="size-4" />
               KyusiChat
@@ -92,32 +95,47 @@ const AppLayout = () => {
           </nav>
           
           {/* Footer */}
-          <div className="border-t p-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="size-8">
-                <AvatarImage src={user?.avatar || ""} alt={user?.name || "Avatar"} />
-                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col gap-0.5 flex-1">
-                <span className="text-sm font-semibold">{user?.name}</span>
-                <Button 
-                  variant="link" 
-                  size="sm" 
-                  onClick={handleLogout} 
-                  className="p-0 h-auto justify-start hover:underline text-xs text-muted-foreground"
-                >
-                  <ArrowLeftFromLine className="mr-1 size-3" />
-                  Logout
-                </Button>
-              </div>
-            </div>
+          <div className="border-t border-red-700 p-4 space-y-2">
+            <Link 
+              to="/profile" 
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+            >
+              <User className="size-4" />
+              Profile
+            </Link>
+            
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout} 
+              className="w-full justify-start text-white hover:bg-red-700 hover:text-white px-3 py-2"
+            >
+              <ArrowLeftFromLine className="mr-3 size-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1">
-        <div className="p-4 md:p-6">
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <div className="bg-white border-b px-6 py-3">
+          <div className="flex items-center justify-end">
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium">{user?.name}</div>
+                <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
+              </div>
+              <Avatar className="size-8">
+                <AvatarImage src={user?.avatar || ""} alt={user?.name || "Avatar"} />
+                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+        </div>
+        
+        {/* Page Content */}
+        <div className="flex-1 p-4 md:p-6">
           <React.Suspense fallback={<p>Loading...</p>}>
             <div className="w-full">
               <Outlet />
