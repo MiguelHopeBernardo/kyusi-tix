@@ -321,7 +321,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (ticket.id === ticketId) {
         return {
           ...ticket,
-          attachments: ticket.attachments.filter(attachment => attachment.id !== attachmentId),
+          attachments: ticket.attachments?.filter(attachment => attachment.id !== attachmentId) || [],
           updatedAt: new Date().toISOString()
         };
       }
@@ -375,33 +375,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getClosedTickets = () => {
     return tickets.filter(ticket => ['resolved', 'closed'].includes(ticket.status));
-  };
-
-  const deleteTicket = (id: string) => {
-    setTickets(prev => prev.filter(ticket => ticket.id !== id));
-  };
-
-  const deleteAttachment = (ticketId: string, attachmentId: string) => {
-    setTickets(prev => prev.map(ticket => {
-      if (ticket.id === ticketId) {
-        return {
-          ...ticket,
-          attachments: ticket.attachments?.filter(attachment => attachment.id !== attachmentId) || [],
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return ticket;
-    }));
-  };
-
-  const updateUser = (id: string, updates: Partial<User>) => {
-    setUsers(prev => prev.map(user =>
-      user.id === id ? { ...user, ...updates } : user
-    ));
-  };
-
-  const deleteUser = (id: string) => {
-    setUsers(prev => prev.filter(user => user.id !== id));
   };
 
   return (

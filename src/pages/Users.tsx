@@ -96,6 +96,11 @@ const Users = () => {
   const handleDepartmentChange = (value: string) => {
     setDepartment(value === 'none' ? undefined : value);
   };
+
+  // Handle role change - convert string to UserRole
+  const handleRoleChange = (roleValue: string) => {
+    setRole(roleValue as UserRole);
+  };
   
   // Convert users to UserDetails format
   const userDetails: UserDetails[] = users.map(user => ({
@@ -163,7 +168,7 @@ const Users = () => {
         email={email}
         setEmail={setEmail}
         role={role}
-        setRole={setRole}
+        setRole={handleRoleChange}
         department={department}
         handleDepartmentChange={handleDepartmentChange}
         position={position}
