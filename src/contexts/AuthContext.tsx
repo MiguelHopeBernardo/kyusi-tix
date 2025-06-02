@@ -1,26 +1,58 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from "@/components/ui/sonner";
-import { authService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 
-// Define roles to match Django choices
-export type UserRole = 'admin' | 'staff' | 'faculty' | 'student' | 'alumni';
+// Define roles
+export type UserRole = 'admin' | 'faculty' | 'student' | 'alumni';
 
-// User interface to match Django user model
+// User interface
 export interface User {
   id: string;
   name: string;
   email: string;
-  username: string;
   role: UserRole;
   department?: string;
   avatar?: string;
 }
 
+// Mock user data
+const mockUsers: User[] = [
+  {
+    id: '1',
+    name: 'Admin User',
+    email: 'admin@pupqc.edu.ph',
+    role: 'admin',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+  },
+  {
+    id: '2',
+    name: 'Faculty Member',
+    email: 'faculty@pupqc.edu.ph',
+    role: 'faculty',
+    department: 'Computer Science',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=faculty',
+  },
+  {
+    id: '3',
+    name: 'Student User',
+    email: 'student@pupqc.edu.ph',
+    role: 'student',
+    department: 'Computer Science',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=student',
+  },
+  {
+    id: '4',
+    name: 'Alumni User',
+    email: 'alumni@pupqc.edu.ph',
+    role: 'alumni',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alumni',
+  },
+];
+
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   forgotPassword: (email: string) => Promise<boolean>;
@@ -34,182 +66,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check if user is already logged in
   useEffect(() => {
-    checkAuthStatus();
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setIsLoading(false);
   }, []);
 
-  const checkAuthStatus = async () => {
-    try {
-      console.log('🔍 Checking auth status...');
-      console.log('🌐 Attempting to connect to Django server at http://127.0.0.1:8000');
-      
-      // Test Django server connectivity with more detailed logging
-      console.log('📡 Making health check request...');
-      const healthResponse = await fetch('http://127.0.0.1:8000/health/', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('✅ Health check response status:', healthResponse.status);
-      console.log('📋 Health check response headers:', Object.fromEntries(healthResponse.headers.entries()));
-      
-      if (!healthResponse.ok) {
-        console.error('❌ Django server health check failed with status:', healthResponse.status);
-        throw new Error(`Django server returned status ${healthResponse.status}`);
-      }
-      
-      const healthData = await healthResponse.json();
-      console.log('💚 Health check successful:', healthData);
-      
-      // Check if user is authenticated
-      console.log('👤 Checking user authentication...');
-      const response = await fetch('http://127.0.0.1:8000/users/profile/', {
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('👤 Profile response status:', response.status);
-      
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('✅ User authenticated:', userData.username);
-        setUser({
-          id: userData.id,
-          name: userData.first_name + ' ' + userData.last_name,
-          email: userData.email,
-          username: userData.username,
-          role: userData.role,
-          department: userData.department,
-          avatar: userData.profile_image,
-        });
-      } else if (response.status === 403 || response.status === 401) {
-        console.log('🔐 User not authenticated');
-      } else {
-        console.log('⚠️ Unexpected response status:', response.status);
-      }
-    } catch (error) {
-      console.error('💥 Auth check failed:', error);
-      
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        console.error('🚫 Network error: Cannot reach Django server');
-        console.error('🔧 Troubleshooting steps:');
-        console.error('   1. Make sure Django server is running: python manage.py runserver');
-        console.error('   2. Check that server is running on http://127.0.0.1:8000');
-        console.error('   3. Install django-cors-headers: pip install django-cors-headers');
-        console.error('   4. Restart Django server after installing CORS');
-        
-        toast.error("Cannot connect to Django server", {
-          description: "Make sure Django is running on http://127.0.0.1:8000 and django-cors-headers is installed",
-          duration: 8000,
-        });
-      } else {
-        console.error('🔥 Unexpected error:', error);
-        toast.error("Connection error", {
-          description: "Unable to connect to the server. Please try again.",
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Login function
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      console.log('🔑 Attempting login for:', username);
-      console.log('🌐 Making login request to Django...');
+      // In real app, this would be an API call
+      // For demo, we'll use mock data
+      const foundUser = mockUsers.find(u => u.email === email);
       
-      const response = await fetch('http://127.0.0.1:8000/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-        credentials: 'include',
-      });
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      console.log('📡 Login response status:', response.status);
-      console.log('📋 Login response headers:', Object.fromEntries(response.headers.entries()));
-      
-      const data = await response.json();
-      console.log('📄 Login response data:', data);
-      
-      if (response.ok && data.success) {
-        console.log('✅ Login successful for:', data.user.username);
-        setUser({
-          id: data.user.id,
-          name: data.user.first_name + ' ' + data.user.last_name,
-          email: data.user.email,
-          username: data.user.username,
-          role: data.user.role,
-          department: data.user.department,
-          avatar: data.user.profile_image,
-        });
-        toast.success(`Welcome back, ${data.user.first_name}!`);
+      if (foundUser && password === 'password') { // Demo password
+        setUser(foundUser);
+        localStorage.setItem('user', JSON.stringify(foundUser));
+        toast.success(`Welcome, ${foundUser.name}`);
         setIsLoading(false);
         return true;
       } else {
-        console.error('❌ Login failed:', data.error || 'Unknown error');
-        toast.error(data.error || "Invalid credentials");
+        toast.error("Invalid credentials");
         setIsLoading(false);
         return false;
       }
     } catch (error) {
-      console.error('💥 Login error:', error);
-      
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        console.error('🚫 Network error during login');
-        toast.error("Cannot connect to Django server", {
-          description: "Make sure Django is running and CORS is configured",
-          duration: 8000,
-        });
-      } else {
-        toast.error("Login failed - unexpected error");
-      }
+      console.error(error);
+      toast.error("Login failed");
       setIsLoading(false);
       return false;
     }
   };
 
-  // Logout function with navigation
-  const logout = async () => {
-    try {
-      await authService.logout();
-      setUser(null);
-      toast.success("Logged out successfully");
-      // Force navigation to login page
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Logout error:', error);
-      setUser(null);
-      toast.success("Logged out successfully");
-      // Force navigation to login page even if logout fails
-      window.location.href = '/login';
-    }
+  // Fixed logout function - Use React Router for navigation instead of window.location
+  const logout = () => {
+    // Remove user from state and local storage
+    setUser(null);
+    localStorage.removeItem('user');
+    toast.success("Logged out successfully");
+    
+    // We no longer use window.location.href which causes the app to reload
+    // Navigation will be handled by the component using the context
   };
   
+  // Forgot password function
   const forgotPassword = async (email: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
+      // Check if the email exists in our mock data
+      const foundUser = mockUsers.find(u => u.email === email);
+      
+      // Simulate API latency
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success(`Password reset instructions have been sent to ${email}`);
-      setIsLoading(false);
-      return true;
+      
+      if (foundUser) {
+        toast.success(`Password reset link has been sent to ${email}`);
+        setIsLoading(false);
+        return true;
+      } else {
+        toast.error("Email not found in our system");
+        setIsLoading(false);
+        return false;
+      }
     } catch (error) {
-      console.error('Password reset error:', error);
+      console.error(error);
       toast.error("Failed to process request");
       setIsLoading(false);
       return false;

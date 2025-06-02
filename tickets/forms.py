@@ -23,7 +23,7 @@ class TicketForm(forms.ModelForm):
     
     attachments = forms.FileField(
         required=False,
-        widget=forms.FileInput(attrs={'multiple': True}),
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
         help_text='Upload JPEG, PNG, or PDF files (max 10MB each)'
     )
     
@@ -51,7 +51,7 @@ class TicketUpdateForm(forms.ModelForm):
     
     attachments = forms.FileField(
         required=False,
-        widget=forms.FileInput(attrs={'multiple': True}),
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
         help_text='Upload JPEG, PNG, or PDF files (max 10MB each)'
     )
     

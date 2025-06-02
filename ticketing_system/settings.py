@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-replace-this-with-your-own-secret-key'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = [
@@ -21,7 +21,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',  # Add CORS headers
     'tickets',
     'users',
     'dashboard',
@@ -30,7 +29,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # Add CORS middleware first
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -40,46 +38,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# CORS settings - More permissive for development
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8081",
-    "http://127.0.0.1:8081",
-    "https://27ef5806-eb5b-416b-8c67-813a42467d66.lovableproject.com",
-    "https://id-preview--27ef5806-eb5b-416b-8c67-813a42467d66.lovable.app",
-]
-
-# Allow all origins for development - REMOVE IN PRODUCTION
-CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOW_CREDENTIALS = True
-
-# Allow specific headers
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-
-# Additional CORS settings to ensure preflight requests work
-CORS_PREFLIGHT_MAX_AGE = 86400
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-
 ROOT_URLCONF = 'ticketing_system.urls'
-
-# ... keep existing code (TEMPLATES, WSGI_APPLICATION sections)
 
 TEMPLATES = [
     {
@@ -99,13 +58,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ticketing_system.wsgi.application'
 
-# Database - Updated with new credentials
+# Database
+# Update these settings with your database credentials
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'qctix',
-        'USER': 'postgres',
-        'PASSWORD': 'kanekiken01',
+        'NAME': 'kyusitix',
+        'USER': 'kyusitixuser',  # Change this to your database user
+        'PASSWORD': 'your_secure_password',  # Change this to your database password
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -113,7 +73,6 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# ... keep existing code (PASSWORD_VALIDATORS, LANGUAGE_CODE, TIME_ZONE, USE_I18N, USE_TZ sections)
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
