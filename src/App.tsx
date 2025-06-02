@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tickets from "./pages/Tickets";
+import Logs from "./pages/Logs";
 import Users from "./pages/Users";
 import Departments from "./pages/Departments";
 import KyusiChat from "./pages/KyusiChat";
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/" element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tickets" element={<Tickets />} />
+                <Route path="/logs" element={<Logs />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/departments" element={<Departments />} />
                 <Route path="/kyusichat" element={<KyusiChat />} />

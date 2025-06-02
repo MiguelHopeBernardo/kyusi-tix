@@ -1,14 +1,25 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Ticket, Department, UserDetails, TicketStatus, TicketPriority, FileAttachment, TicketComment } from '@/models';
 import { mockTickets, mockDepartments, mockUsers } from '@/services/mockData';
 import { useAuth } from './AuthContext';
 import { toast } from "@/components/ui/sonner";
 
+interface SystemLog {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  action: 'ticket_created' | 'comment_added' | 'status_changed' | 'assigned' | 'unassigned' | 'auto_routed';
+  ticketId: string;
+  description: string;
+  timestamp: string;
+}
+
 interface DataContextType {
   tickets: Ticket[];
   departments: Department[];
   users: UserDetails[];
+  logs: SystemLog[];
   addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'comments'>, files?: File[]) => void;
   updateTicket: (id: string, updates: Partial<Ticket>, files?: File[]) => void;
   deleteTicket: (id: string) => void;
@@ -41,6 +52,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
   const [departments, setDepartments] = useState<Department[]>(mockDepartments);
   const [users, setUsers] = useState<UserDetails[]>(mockUsers);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
   const { user } = useAuth();
 
   // Helper function to convert File objects to FileAttachment
@@ -104,12 +116,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
     
     setTickets(prev => [newTicket, ...prev]);
+    
+    // Add log entry
+    addLog('ticket_created', ticketId, `Created ticket "${ticket.title}" with priority ${ticket.priority}`);
+    
     toast.success("Ticket created successfully");
     return newTicket;
   };
 
   // Update an existing ticket
   const updateTicket = (id: string, updates: Partial<Ticket>, files: File[] = []) => {
+    const originalTicket = tickets.find(t => t.id === id);
+    
     setTickets(prev => 
       prev.map(ticket => {
         if (ticket.id === id) {
@@ -129,6 +147,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return ticket;
       })
     );
+    
+    // Add log entry for status changes
+    if (originalTicket && updates.status && updates.status !== originalTicket.status) {
+      addLog('status_changed', id, `Changed status from "${originalTicket.status}" to "${updates.status}"`);
+    }
+    
     toast.success("Ticket updated successfully");
   };
 
@@ -187,7 +211,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       content,
       createdAt: new Date().toISOString(),
       isInternal,
-      attachment,  // Add the attachment to the comment
+      attachment,
     };
     
     setTickets(prev => 
@@ -201,6 +225,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           : ticket
       )
     );
+    
+    // Add log entry (only for non-internal comments or if user is admin/faculty)
+    if (!isInternal || user.role === 'admin' || user.role === 'faculty') {
+      const commentType = isInternal ? 'internal note' : 'comment';
+      addLog('comment_added', ticketId, `Added ${commentType}${file ? ' with attachment' : ''}`);
+    }
   };
 
   // User management
@@ -313,17 +343,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       
       // Create assignment note content
       let assignmentNote = '';
+      let logDescription = '';
       
       if (previousAssignee) {
         // This is a reassignment
         assignmentNote = `Ticket was manually reassigned from ${previousAssignee.name} (${previousDepartment || 'No department'}) to ${assignee.name} (${assignee.department || 'No department'}).`;
+        logDescription = `Reassigned ticket from ${previousAssignee.name} to ${assignee.name}`;
       } else {
         // This is an initial assignment
         assignmentNote = `Ticket was manually assigned to department: ${assignee.department || 'No department'}, assignee: ${assignee.name}.`;
+        logDescription = `Assigned ticket to ${assignee.name} (${assignee.department || 'No department'})`;
       }
       
       // Add internal note about the assignment
       addTicketComment(ticketId, assignmentNote, true);
+      
+      // Add log entry
+      addLog('assigned', ticketId, logDescription);
     }
   };
 
@@ -354,6 +390,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return users.find(user => user.id === id);
   };
 
+  // Helper function to add a log entry
+  const addLog = (action: SystemLog['action'], ticketId: string, description: string, logUser?: UserDetails) => {
+    const currentUser = logUser || user;
+    if (!currentUser) return;
+    
+    const log: SystemLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userAvatar: currentUser.avatar,
+      action,
+      ticketId,
+      description,
+      timestamp: new Date().toISOString(),
+    };
+    
+    setLogs(prev => [log, ...prev]);
+  };
+
   // Clean up object URLs when component unmounts
   useEffect(() => {
     return () => {
@@ -382,6 +437,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       tickets,
       departments,
       users,
+      logs,
       addTicket,
       updateTicket,
       deleteTicket,
