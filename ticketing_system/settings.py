@@ -59,20 +59,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ticketing_system.wsgi.application'
 
 # Database
-# Update these settings with your database credentials
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'kyusitix',
-        'USER': 'kyusitixuser',  # Change this to your database user
-        'PASSWORD': 'your_secure_password',  # Change this to your database password
+        'NAME': 'qctix',
+        'USER': 'postgres',
+        'PASSWORD': 'kanekiken01',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 
 AUTH_USER_MODEL = 'users.CustomUser'
-
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

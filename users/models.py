@@ -18,6 +18,7 @@ class CustomUser(AbstractUser):
         ('finance', 'Finance (Accounting)'),
         ('alumni_affairs', 'Alumni Affairs'),
         ('student_affairs', 'Student Affairs (OSAS)'),
+        ('scholarship', 'Scholarship'),
         ('computer_science', 'Computer Science'),
         ('information_technology', 'Information Technology'),
     ]
