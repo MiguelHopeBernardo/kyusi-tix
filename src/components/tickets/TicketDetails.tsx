@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -58,6 +59,15 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
     
     // If unassigned, clear the assignment
     if (selectedAssignee === 'unassigned') {
+      // Create note about unassignment
+      if (currentTicket.assignedTo) {
+        const previousAssignee = users.find(u => u.id === currentTicket.assignedTo);
+        if (previousAssignee) {
+          const unassignmentNote = `Ticket was manually unassigned from ${previousAssignee.name} (${currentTicket.department || 'No department'}).`;
+          addTicketComment(currentTicket.id, unassignmentNote, true);
+        }
+      }
+      
       updateTicket(currentTicket.id, { 
         assignedTo: undefined,
         assigneeName: undefined,
@@ -66,6 +76,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
       return;
     }
     
+    // Use the assignTicket function which will handle the internal note
     assignTicket(currentTicket.id, selectedAssignee);
   };
   
@@ -226,6 +237,9 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
   const canManageTicket = user?.role === 'admin' || currentTicket.assignedTo === user?.id;
   const canAddFileToComment = user?.role === 'admin' || user?.role === 'faculty';
   
+  // Get current handler information
+  const currentHandler = currentTicket.assignedTo ? users.find(u => u.id === currentTicket.assignedTo) : null;
+  
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg overflow-y-auto">
@@ -238,6 +252,30 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
             onDeleteAttachment={handleDeleteAttachment}
             userId={user?.id}
           />
+          
+          {/* Current Handler Section */}
+          <div className="space-y-2">
+            <h3 className="font-medium text-sm text-muted-foreground">Currently Handled By</h3>
+            {currentHandler ? (
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                  {currentHandler.avatar ? (
+                    <img src={currentHandler.avatar} alt={currentHandler.name} className="w-8 h-8 rounded-full" />
+                  ) : (
+                    currentHandler.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{currentHandler.name}</p>
+                  <p className="text-xs text-muted-foreground">{currentHandler.department || 'No department'} • {currentHandler.role}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground">Not assigned to anyone</p>
+              </div>
+            )}
+          </div>
           
           <Separator />
           

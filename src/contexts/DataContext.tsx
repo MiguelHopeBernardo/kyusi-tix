@@ -292,17 +292,38 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return { open, urgent, resolvedToday, statusCounts, priorityCounts };
   };
 
-  // Assign a ticket to a user
+  // Assign a ticket to a user with internal note
   const assignTicket = (ticketId: string, userId: string) => {
+    const ticket = tickets.find(t => t.id === ticketId);
     const assignee = users.find(u => u.id === userId);
     
-    if (assignee) {
+    if (ticket && assignee && user) {
+      // Get previous assignment info for comparison
+      const previousAssignee = ticket.assignedTo ? users.find(u => u.id === ticket.assignedTo) : null;
+      const previousDepartment = ticket.department;
+      
+      // Update the ticket
       updateTicket(ticketId, {
         assignedTo: assignee.id,
         assigneeName: assignee.name,
         assigneeAvatar: assignee.avatar,
+        department: assignee.department,
         status: 'in_progress'
       });
+      
+      // Create assignment note content
+      let assignmentNote = '';
+      
+      if (previousAssignee) {
+        // This is a reassignment
+        assignmentNote = `Ticket was manually reassigned from ${previousAssignee.name} (${previousDepartment || 'No department'}) to ${assignee.name} (${assignee.department || 'No department'}).`;
+      } else {
+        // This is an initial assignment
+        assignmentNote = `Ticket was manually assigned to department: ${assignee.department || 'No department'}, assignee: ${assignee.name}.`;
+      }
+      
+      // Add internal note about the assignment
+      addTicketComment(ticketId, assignmentNote, true);
     }
   };
 
