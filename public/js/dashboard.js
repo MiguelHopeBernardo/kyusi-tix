@@ -1,4 +1,3 @@
-
 // Dashboard specific JavaScript
 
 // Dashboard variables
@@ -16,26 +15,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load dashboard statistics
-function loadDashboardStats() {
-    // Calculate stats from mock data
-    dashboardStats = tickets.reduce((stats, ticket) => {
-        stats.total++;
-        switch (ticket.status) {
-            case 'open':
-                stats.open++;
-                break;
-            case 'in_progress':
-                stats.in_progress++;
-                break;
-            case 'resolved':
-                stats.resolved++;
-                break;
-        }
-        return stats;
-    }, { open: 0, in_progress: 0, resolved: 0, total: 0 });
-
-    // Update UI
-    updateStatsDisplay();
+async function loadDashboardStats() {
+    try {
+        showLoading('openTickets', '');
+        showLoading('inProgressTickets', '');
+        showLoading('resolvedTickets', '');
+        showLoading('totalTickets', '');
+        
+        const stats = await fetchTicketStats();
+        dashboardStats = stats;
+        
+        // Update UI
+        updateStatsDisplay();
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        showToast('Failed to load dashboard statistics', 'danger');
+    }
 }
 
 // Update statistics display
@@ -73,19 +68,16 @@ function animateNumber(element, start, end, duration) {
 }
 
 // Load recent tickets
-function loadRecentTickets() {
+async function loadRecentTickets() {
     const tableBody = document.getElementById('recentTicketsTable');
     if (!tableBody) return;
 
     // Show loading state
     showLoading('recentTicketsTable', 'Loading recent tickets...');
 
-    // Simulate API delay
-    setTimeout(() => {
-        // Get 10 most recent tickets
-        const recentTickets = [...tickets]
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 10);
+    try {
+        const response = await fetchTickets({ page: 1, per_page: 10 });
+        const recentTickets = response.tickets;
 
         if (recentTickets.length === 0) {
             tableBody.innerHTML = `
@@ -103,8 +95,8 @@ function loadRecentTickets() {
         }
 
         // Render tickets
-        const ticketsHtml = recentTickets.map(ticket => `
-            <tr class="fade-in" style="animation-delay: ${Math.random() * 0.5}s">
+        const ticketsHtml = recentTickets.map((ticket, index) => `
+            <tr class="fade-in" style="animation-delay: ${index * 0.05}s">
                 <td>
                     <span class="badge bg-secondary">#${ticket.id}</span>
                 </td>
@@ -113,12 +105,12 @@ function loadRecentTickets() {
                         ${ticket.subject}
                     </a>
                     <br>
-                    <small class="text-muted">by ${ticket.createdBy}</small>
+                    <small class="text-muted">by ${ticket.created_by}</small>
                 </td>
                 <td>${getStatusBadge(ticket.status)}</td>
                 <td>${getPriorityBadge(ticket.priority)}</td>
                 <td>
-                    <small>${formatRelativeTime(ticket.createdAt)}</small>
+                    <small>${formatRelativeTime(ticket.created_at)}</small>
                 </td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
@@ -136,59 +128,77 @@ function loadRecentTickets() {
         `).join('');
 
         tableBody.innerHTML = ticketsHtml;
-    }, 500);
+    } catch (error) {
+        console.error('Error loading recent tickets:', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <div class="text-danger">
+                        <i class="bi bi-exclamation-triangle display-4 d-block mb-2"></i>
+                        <p>Failed to load tickets</p>
+                        <button class="btn btn-outline-primary" onclick="loadRecentTickets()">Try Again</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        showToast('Failed to load recent tickets', 'danger');
+    }
 }
 
 // Quick update ticket status
-function quickUpdate(ticketId) {
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
+async function quickUpdate(ticketId) {
+    try {
+        const ticket = await fetchTicketDetail(ticketId);
+        const nextStatus = getNextStatus(ticket.status);
+        
+        if (!nextStatus) {
+            showToast('No more status updates available for this ticket.', 'info');
+            return;
+        }
 
-    const nextStatus = getNextStatus(ticket.status);
-    if (!nextStatus) {
-        showToast('No more status updates available for this ticket.', 'info');
-        return;
-    }
-
-    // Show confirmation modal
-    const modalHtml = `
-        <div class="modal fade" id="quickUpdateModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Quick Update Ticket #${ticket.id}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Update ticket status from <strong>${ticket.status}</strong> to <strong>${nextStatus}</strong>?</p>
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>${ticket.subject}</strong>
+        // Show confirmation modal
+        const modalHtml = `
+            <div class="modal fade" id="quickUpdateModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Quick Update Ticket #${ticket.id}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="confirmQuickUpdate(${ticket.id}, '${nextStatus}')">
-                            Update Status
-                        </button>
+                        <div class="modal-body">
+                            <p>Update ticket status from <strong>${ticket.status}</strong> to <strong>${nextStatus}</strong>?</p>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>${ticket.subject}</strong>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmQuickUpdate(${ticket.id}, '${nextStatus}')">
+                                Update Status
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    // Remove existing modal if any
-    const existingModal = document.getElementById('quickUpdateModal');
-    if (existingModal) {
-        existingModal.remove();
+        // Remove existing modal if any
+        const existingModal = document.getElementById('quickUpdateModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('quickUpdateModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error fetching ticket details:', error);
+        showToast('Failed to load ticket details', 'danger');
     }
-
-    // Add modal to page
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('quickUpdateModal'));
-    modal.show();
 }
 
 // Get next logical status
@@ -204,26 +214,26 @@ function getNextStatus(currentStatus) {
 }
 
 // Confirm quick update
-function confirmQuickUpdate(ticketId, newStatus) {
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
+async function confirmQuickUpdate(ticketId, newStatus) {
+    try {
+        await updateTicketStatus(ticketId, newStatus);
 
-    // Update ticket
-    ticket.status = newStatus;
-    ticket.updatedAt = new Date().toISOString();
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickUpdateModal'));
+        modal.hide();
 
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('quickUpdateModal'));
-    modal.hide();
+        // Show success message
+        showToast(`Ticket #${ticketId} status updated to ${newStatus}`, 'success');
 
-    // Show success message
-    showToast(`Ticket #${ticketId} status updated to ${newStatus}`, 'success');
-
-    // Refresh dashboard
-    setTimeout(() => {
-        loadDashboardStats();
-        loadRecentTickets();
-    }, 500);
+        // Refresh dashboard
+        setTimeout(() => {
+            loadDashboardStats();
+            loadRecentTickets();
+        }, 500);
+    } catch (error) {
+        console.error('Error updating ticket status:', error);
+        showToast('Failed to update ticket status', 'danger');
+    }
 }
 
 // Refresh statistics
@@ -250,7 +260,6 @@ function refreshStats() {
 function exportDashboard() {
     const data = {
         stats: dashboardStats,
-        recentTickets: tickets.slice(0, 10),
         exportDate: new Date().toISOString()
     };
 

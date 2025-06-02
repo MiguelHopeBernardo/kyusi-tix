@@ -1,4 +1,3 @@
-
 // KyusiTix Main JavaScript Functions
 
 // Global variables
@@ -13,6 +12,108 @@ let tickets = [];
 let users = [];
 let currentPage = 1;
 let itemsPerPage = 20;
+
+// API Configuration
+const API_BASE_URL = '/api'; // Django API base URL
+const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+// API Helper Functions
+async function apiRequest(url, options = {}) {
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN || '',
+        },
+        credentials: 'include', // Include cookies for Django session auth
+    };
+    
+    const mergedOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers,
+        },
+    };
+    
+    try {
+        const response = await fetch(url, mergedOptions);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        }
+        return await response.text();
+    } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+    }
+}
+
+// API Functions
+async function fetchTickets(filters = {}) {
+    const params = new URLSearchParams();
+    
+    if (filters.status) params.append('status', filters.status);
+    if (filters.priority) params.append('priority', filters.priority);
+    if (filters.department) params.append('department', filters.department);
+    if (filters.page) params.append('page', filters.page);
+    if (filters.per_page) params.append('per_page', filters.per_page);
+    
+    const url = `${API_BASE_URL}/tickets/api/tickets/?${params.toString()}`;
+    return await apiRequest(url);
+}
+
+async function fetchTicketStats() {
+    const url = `${API_BASE_URL}/tickets/api/tickets/stats/`;
+    return await apiRequest(url);
+}
+
+async function fetchTicketDetail(ticketId) {
+    const url = `${API_BASE_URL}/tickets/api/tickets/${ticketId}/`;
+    return await apiRequest(url);
+}
+
+async function createTicket(ticketData) {
+    const url = `${API_BASE_URL}/tickets/api/tickets/submit/`;
+    return await apiRequest(url, {
+        method: 'POST',
+        body: JSON.stringify(ticketData),
+    });
+}
+
+async function addComment(ticketId, commentData) {
+    const url = `${API_BASE_URL}/tickets/api/tickets/${ticketId}/comment/`;
+    return await apiRequest(url, {
+        method: 'POST',
+        body: JSON.stringify(commentData),
+    });
+}
+
+async function updateTicketStatus(ticketId, status) {
+    const url = `${API_BASE_URL}/tickets/api/tickets/${ticketId}/status/`;
+    return await apiRequest(url, {
+        method: 'POST',
+        body: JSON.stringify({ status }),
+    });
+}
+
+async function assignTicket(ticketId, assigneeId) {
+    const url = `${API_BASE_URL}/tickets/api/tickets/${ticketId}/assign/`;
+    return await apiRequest(url, {
+        method: 'POST',
+        body: JSON.stringify({ assignee_id: assigneeId }),
+    });
+}
+
+async function searchTickets(query) {
+    const url = `${API_BASE_URL}/tickets/api/tickets/search/?q=${encodeURIComponent(query)}`;
+    return await apiRequest(url);
+}
 
 // Utility Functions
 function formatDate(dateString) {
@@ -310,7 +411,7 @@ function filterTickets(tickets, filters) {
         // Search filter
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
-            const searchableText = `${ticket.subject} ${ticket.description} ${ticket.createdBy}`.toLowerCase();
+            const searchableText = `${ticket.subject} ${ticket.description} ${ticket.created_by}`.toLowerCase();
             if (!searchableText.includes(searchTerm)) return false;
         }
         

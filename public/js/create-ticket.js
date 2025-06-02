@@ -1,4 +1,3 @@
-
 // Create Ticket page JavaScript
 
 // Form validation rules
@@ -54,7 +53,7 @@ function initializeForm() {
 }
 
 // Handle form submission
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -63,7 +62,7 @@ function handleFormSubmit(e) {
     }
 
     const formData = getFormData();
-    submitTicket(formData);
+    await submitTicket(formData);
 }
 
 // Get form data
@@ -152,33 +151,21 @@ function clearFieldError(field) {
 }
 
 // Submit ticket
-function submitTicket(formData) {
+async function submitTicket(formData) {
     // Show loading state
     const submitBtn = document.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Creating...';
     submitBtn.disabled = true;
 
-    // Simulate API call
-    setTimeout(() => {
-        // Create new ticket
-        const newTicket = {
-            id: tickets.length + 1,
+    try {
+        // Create ticket via API
+        const response = await createTicket({
             subject: formData.subject,
             description: formData.description,
-            status: 'open',
             priority: formData.priority,
-            department: formData.department || autoAssignDepartment(formData),
-            createdBy: currentUser.name,
-            assignedTo: formData.assignedTo || autoAssignUser(formData),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            comments: 0,
-            attachments: formData.attachments.length
-        };
-
-        // Add to tickets array
-        tickets.unshift(newTicket);
+            department: formData.department
+        });
 
         // Clear draft data
         clearDraftData();
@@ -188,10 +175,17 @@ function submitTicket(formData) {
 
         // Redirect to ticket details
         setTimeout(() => {
-            window.location.href = `ticket-detail.html?id=${newTicket.id}`;
+            window.location.href = `ticket-detail.html?id=${response.ticket_id}`;
         }, 1500);
 
-    }, 2000);
+    } catch (error) {
+        console.error('Error creating ticket:', error);
+        showToast('Failed to create ticket. Please try again.', 'danger');
+        
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
 }
 
 // Auto-assign department based on keywords
