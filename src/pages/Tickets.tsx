@@ -19,7 +19,8 @@ const Tickets = () => {
     getAssignedToMeTickets, 
     getOpenTickets, 
     getClosedTickets, 
-    tickets 
+    tickets,
+    exportTickets
   } = useData();
   const [newTicketDialogOpen, setNewTicketDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -30,47 +31,12 @@ const Tickets = () => {
     setDetailsOpen(true);
   };
   
-  const handleExportCSV = () => {
-    // Get all tickets
-    const allTickets = [...getMyTickets(), ...getAssignedToMeTickets()];
-    
-    if (allTickets.length === 0) {
-      toast.error("No tickets to export");
-      return;
+  const handleExportCSV = async () => {
+    try {
+      await exportTickets();
+    } catch (error) {
+      console.error('Export failed:', error);
     }
-    
-    // Create CSV headers
-    const headers = ['Ticket ID', 'Title', 'Description', 'Status', 'Priority', 'Creator', 'Assignee', 'Department', 'Created At', 'Updated At'];
-    
-    // Create CSV rows
-    const rows = allTickets.map(ticket => [
-      ticket.id,
-      `"${ticket.title.replace(/"/g, '""')}"`, // Escape quotes
-      `"${ticket.description.replace(/"/g, '""')}"`, // Escape quotes
-      ticket.status,
-      ticket.priority,
-      ticket.creatorName,
-      ticket.assigneeName || 'Unassigned',
-      ticket.department || 'N/A',
-      new Date(ticket.createdAt).toLocaleString(),
-      new Date(ticket.updatedAt).toLocaleString(),
-    ]);
-    
-    // Combine headers and rows
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-    
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `tickets_export_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast.success("Tickets exported successfully");
   };
   
   // Only show tabs that are relevant to the user's role

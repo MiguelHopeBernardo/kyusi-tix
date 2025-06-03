@@ -603,6 +603,107 @@ def search_tickets_api(request):
     
     return JsonResponse({'tickets': results})
 
+@login_required
+def export_tickets_csv(request):
+    """
+    API endpoint to export tickets as CSV
+    """
+    import csv
+    from django.http import HttpResponse
+    
+    # Get tickets based on user permissions
+    if request.user.is_staff:
+        tickets = Ticket.objects.all()
+    else:
+        tickets = Ticket.objects.filter(
+            Q(created_by=request.user) | Q(assigned_to=request.user)
+        )
+    
+    # Create HTTP response with CSV content type
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="tickets_export_{timezone.now().strftime("%Y%m%d")}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Write header
+    writer.writerow([
+        'Ticket ID', 'Title', 'Description', 'Status', 'Priority', 
+        'Creator', 'Assignee', 'Department', 'Created At', 'Updated At'
+    ])
+    
+    # Write ticket data
+    for ticket in tickets:
+        writer.writerow([
+            ticket.id,
+            ticket.subject,
+            ticket.description,
+            ticket.get_status_display(),
+            ticket.get_priority_display(),
+            ticket.created_by.username,
+            ticket.assigned_to.username if ticket.assigned_to else 'Unassigned',
+            ticket.department or 'N/A',
+            ticket.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            ticket.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+        ])
+    
+    return response
+
+@login_required
+def get_departments_api(request):
+    """
+    API endpoint to get all departments
+    """
+    # Since departments are stored as strings in tickets, we'll get unique departments
+    departments = Ticket.objects.values_list('department', flat=True).distinct()
+    departments = [dept for dept in departments if dept]  # Remove None values
+    
+    # Add standard departments that might not have tickets yet
+    standard_departments = [
+        'Academic Affairs', 'Registrar', 'IT', 'Finance (Accounting)',
+        'Alumni Affairs', 'Student Affairs (OSAS)', 'Scholarship'
+    ]
+    
+    all_departments = list(set(list(departments) + standard_departments))
+    
+    department_data = []
+    for dept in all_departments:
+        ticket_count = Ticket.objects.filter(department=dept).count()
+        department_data.append({
+            'id': dept.lower().replace(' ', '_').replace('(', '').replace(')', ''),
+            'name': dept,
+            'ticket_count': ticket_count,
+        })
+    
+    return JsonResponse({'departments': department_data})
+
+@login_required
+def get_users_api(request):
+    """
+    API endpoint to get users (admin only)
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    users = User.objects.all()
+    users_data = []
+    
+    for user in users:
+        users_data.append({
+            'id': user.id,
+            'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+            'email': user.email,
+            'username': user.username,
+            'role': 'admin' if user.is_staff else getattr(user, 'role', 'student'),
+            'department': getattr(user, 'department', ''),
+            'is_active': user.is_active,
+            'date_joined': user.date_joined.isoformat(),
+        })
+    
+    return JsonResponse({'users': users_data})
+
 # ... keep existing code (update_ticket, delete_attachment, reroute_ticket methods)
 @login_required
 def update_ticket(request, ticket_id):
