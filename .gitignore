@@ -23,3 +23,21 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+VENV/
+*/venv/ # in case it's nested
+# Django
+db.sqlite3
+/media
+/static
+*.log
+local_settings.py # or any other file you use for local specific settings

@@ -1,7 +1,7 @@
-
 from django import forms
 from .models import Ticket, TicketComment
 from django.core.validators import MinLengthValidator, MaxLengthValidator
+from .widgets import MultipleFileInput
 
 class TicketForm(forms.ModelForm):
     # Add validators to ensure secure input
@@ -23,7 +23,7 @@ class TicketForm(forms.ModelForm):
     
     attachments = forms.FileField(
         required=False,
-        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        widget=MultipleFileInput(),
         help_text='Upload JPEG, PNG, or PDF files (max 10MB each)'
     )
     
@@ -51,7 +51,7 @@ class TicketUpdateForm(forms.ModelForm):
     
     attachments = forms.FileField(
         required=False,
-        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        widget=MultipleFileInput(),
         help_text='Upload JPEG, PNG, or PDF files (max 10MB each)'
     )
     
