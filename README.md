@@ -39,19 +39,19 @@ pip install -r requirements.txt
    - Install PostgreSQL if not already installed
    - Create a database for the project:
 ```sql
-CREATE DATABASE kyusitix;
-CREATE USER kyusitix_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE kyusitix TO kyusitix_user;
+CREATE DATABASE qctix;
+CREATE USER postgres WITH PASSWORD 'kanekiken01';
+GRANT ALL PRIVILEGES ON DATABASE kyusitix TO qctix;
 ```
 
 4. Update database settings in `ticketing_system/settings.py`:
 ```python
 DATABASES = {
-    'default': {
+   'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'kyusitix',
-        'USER': 'kyusitix_user',  # or your PostgreSQL username
-        'PASSWORD': 'your_secure_password',
+        'NAME': 'qctix,
+        'USER': 'postgres',  # or your PostgreSQL username
+        'PASSWORD': 'kanekiken01',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -64,10 +64,68 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-6. Run the Django development server:
+6. Create demo users
+
+```sh
+python manage.py shell
+```
+```sh
+from users.models import CustomUser
+
+# Create admin user
+admin_user = CustomUser.objects.create_user(
+    username='admin@pupqc.edu.ph',
+    email='admin@pupqc.edu.ph',
+    password='password',
+    first_name='Admin',
+    last_name='User',
+    role='admin',
+    is_staff=True,
+    is_superuser=True
+)
+
+# Create faculty user
+faculty_user = CustomUser.objects.create_user(
+    username='faculty@pupqc.edu.ph',
+    email='faculty@pupqc.edu.ph',
+    password='password',
+    first_name='Faculty',
+    last_name='Member',
+    role='faculty',
+    department='computer_science'
+)
+
+# Create student user
+student_user = CustomUser.objects.create_user(
+    username='student@pupqc.edu.ph',
+    email='student@pupqc.edu.ph',
+    password='password',
+    first_name='Student',
+    last_name='User',
+    role='student',
+    department='computer_science'
+)
+
+# Create alumni user
+alumni_user = CustomUser.objects.create_user(
+    username='alumni@pupqc.edu.ph',
+    email='alumni@pupqc.edu.ph',
+    password='password',
+    first_name='Alumni',
+    last_name='User',
+    role='alumni'
+)
+
+print("Demo users created successfully!")
+exit()
+```
+
+
+7. Run the Django development server:
 ```sh
 python manage.py runserver
 ```
+
 
 ### Frontend Setup (React/Vite)
 
